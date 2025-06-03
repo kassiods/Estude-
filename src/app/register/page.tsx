@@ -30,6 +30,8 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    // Log the URL being used for the fetch request
+    console.log(`Attempting to register user. Backend API endpoint: ${backendUrl}/api/users/register`);
 
     try {
       const response = await fetch(`${backendUrl}/api/users/register`, {
@@ -49,7 +51,7 @@ export default function RegisterPage() {
           variant: "default",
         });
         // Optionally redirect or clear form
-        // router.push("/login"); 
+        // router.push("/login");
         setName('');
         setEmail('');
         setPassword('');
@@ -61,10 +63,10 @@ export default function RegisterPage() {
         });
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error(`Registration error: Failed to fetch from ${backendUrl}/api/users/register`, error);
       toast({
         title: "Erro de Rede",
-        description: "Não foi possível conectar ao servidor. Verifique sua conexão e se o servidor backend está em execução e acessível.",
+        description: `Não foi possível conectar ao servidor em ${backendUrl}. Verifique sua conexão, se o servidor backend está em execução e se a URL no arquivo .env (NEXT_PUBLIC_BACKEND_URL) está correta e acessível.`,
         variant: "destructive",
       });
     } finally {
@@ -88,10 +90,10 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo</Label>
-              <Input 
-                id="name" 
-                placeholder="Seu Nome" 
-                required  
+              <Input
+                id="name"
+                placeholder="Seu Nome"
+                required
                 className="text-base"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -113,10 +115,10 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
+              <Input
+                id="password"
+                type="password"
+                required
                 className="text-base"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
