@@ -51,6 +51,13 @@ export default function CoursesPage() {
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize("NFD") // Decomposes combined diacritical marks.
+      .replace(/[\u0300-\u036f]/g, ""); // Removes diacritical marks.
+  };
+
   const translatedDifficulty = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
       case 'advanced': return 'avançado';
@@ -61,8 +68,10 @@ export default function CoursesPage() {
   };
   
   const filteredCourses = mockCoursesData.filter(course => {
+    const normalizedSearchTerm = normalizeText(searchTerm);
+    const normalizedCourseTitle = normalizeText(course.title);
     return (
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      normalizedCourseTitle.includes(normalizedSearchTerm) &&
       (difficultyFilter === 'all' || course.difficulty.toLowerCase() === difficultyFilter) &&
       (categoryFilter === 'all' || course.category === categoryFilter)
     );
@@ -146,3 +155,4 @@ export default function CoursesPage() {
     </div>
   );
 }
+
