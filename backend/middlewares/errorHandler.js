@@ -1,7 +1,7 @@
-// Middleware genérico para tratamento de erros
+// Generic error handling middleware
 const errorHandler = (err, req, res, next) => {
   console.error('Erro não tratado:', err.message);
-  console.error(err.stack);
+  console.error(err.stack); // Log stack trace for debugging
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Ocorreu um erro interno no servidor.';
@@ -10,9 +10,9 @@ const errorHandler = (err, req, res, next) => {
     status: 'erro',
     statusCode,
     message,
-    // Opcional: incluir stack trace em ambiente de desenvolvimento
+    // Optional: include stack trace in development environment
     // stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 };
 
-export default errorHandler;
+module.exports = errorHandler;

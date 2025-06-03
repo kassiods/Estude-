@@ -1,12 +1,13 @@
-import express from 'express';
-import * as userController from '../controllers/userController.js';
-import authMiddleware from '../middlewares/authMiddleware.js'; // Exemplo de uso
-
+const express = require('express');
 const router = express.Router();
+const userController = require('../controllers/userController');
+const authMiddleware = require('../middlewares/authMiddleware'); // Assuming you'll use it
 
-router.post('/register', userController.registerUser);
-router.post('/login', userController.loginUser);
-router.get('/me', authMiddleware, userController.getMe); // Rota protegida
-router.patch('/update', authMiddleware, userController.updateUser); // Rota protegida
+router.post('/register', userController.register);
+router.post('/login', userController.login);
 
-export default router;
+// Example of protected routes:
+router.get('/me', authMiddleware, userController.getMe);
+router.patch('/update', authMiddleware, userController.updateUser);
+
+module.exports = router;

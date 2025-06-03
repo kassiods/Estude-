@@ -1,9 +1,9 @@
-// import jwt from 'jsonwebtoken';
-// import { supabase } from '../supabase.js';
+// const jwt = require('jsonwebtoken');
+// const supabase = require('../supabase'); // Assuming supabase client is exported from there
 
-// Placeholder para middleware de autenticação
+// Placeholder for authentication middleware
 const authMiddleware = async (req, res, next) => {
-  // Exemplo de como você poderia verificar um token JWT:
+  // Example using Supabase's way to get user from JWT:
   /*
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -12,16 +12,14 @@ const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    // Se estiver usando JWTs auto-gerenciados:
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // req.user = decoded; // Adiciona os dados do usuário ao objeto req
-
-    // Se estiver usando o Supabase Auth para verificar a sessão a partir de um token:
-    // const { data: { user }, error } = await supabase.auth.getUser(token);
-    // if (error || !user) {
-    //   return res.status(401).json({ message: 'Acesso não autorizado: Token inválido.' });
-    // }
-    // req.user = user;
+    // If using Supabase Auth to verify the session from a token:
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('Auth middleware error or no user:', error);
+      return res.status(401).json({ message: 'Acesso não autorizado: Token inválido ou expirado.' });
+    }
+    req.user = user; // Add user data to the request object
 
     next();
   } catch (error) {
@@ -30,10 +28,12 @@ const authMiddleware = async (req, res, next) => {
   }
   */
 
-  // ATENÇÃO: Este é um placeholder. A autenticação real precisa ser implementada.
-  // Por enquanto, permite todas as requisições passarem.
+  // ATTENTION: This is a placeholder. Real authentication needs to be implemented.
+  // For now, allows all requests to pass through.
   console.warn('Aviso: authMiddleware é um placeholder e não está protegendo rotas.');
+  // For testing, you can mock a user:
+  // req.user = { id: 'mockUserId', email: 'test@example.com', /* other mock data */ };
   next();
 };
 
-export default authMiddleware;
+module.exports = authMiddleware;
