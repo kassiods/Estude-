@@ -1,0 +1,199 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowRight, BookOpen, Search, Sparkles, TrendingUp, CalendarDays, Lightbulb } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { getPersonalizedRecommendations, PersonalizedRecommendationsInput, PersonalizedRecommendationsOutput } from '@/ai/flows/personalized-recommendations';
+import { generateStudyTip, GenerateStudyTipInput, GenerateStudyTipOutput } from '@/ai/flows/ai-powered-highlights';
+
+// Mock data
+const mockCourses = [
+  { id: '1', title: 'Advanced Calculus', description: 'Master the fundamentals of advanced calculus.', modules: 12, difficulty: 'Advanced', image: 'https://placehold.co/600x400.png', dataAiHint: 'math textbook' },
+  { id: '2', title: 'Organic Chemistry Basics', description: 'An introduction to organic chemistry.', modules: 10, difficulty: 'Intermediate', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry lab' },
+  { id: '3', title: 'World History: Ancient Civilizations', description: 'Explore the dawn of human civilization.', modules: 8, difficulty: 'Beginner', image: 'https://placehold.co/600x400.png', dataAiHint: 'historical map' },
+  { id: '4', title: 'Python for Data Science', description: 'Learn Python programming for data analysis.', modules: 15, difficulty: 'Intermediate', image: 'https://placehold.co/600x400.png', dataAiHint: 'code screen' },
+];
+
+const mockExams = [
+  { id: '1', title: 'ENEM 2024', summary: 'National High School Exam, inscriptions open until 30/07.', link: '#' },
+  { id: '2', title: 'Vestibular FUVEST 2025', summary: 'University of São Paulo entrance exam. Check the official notice.', link: '#' },
+];
+
+function CourseCard({ course }: { course: typeof mockCourses[0] }) {
+  return (
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
+      <CardHeader className="p-0">
+        <Image src={course.image} alt={course.title} width={600} height={300} className="w-full h-48 object-cover" data-ai-hint={course.dataAiHint}/>
+      </CardHeader>
+      <CardContent className="p-6 flex-grow">
+        <CardTitle className="text-xl mb-2 font-headline">{course.title}</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground mb-4">{course.description}</CardDescription>
+        <div className="text-xs text-muted-foreground">
+          <span>{course.modules} modules</span> | <span>{course.difficulty}</span>
+        </div>
+      </CardContent>
+      <CardFooter className="p-6 pt-0">
+        <Link href={`/courses/${course.id}`} passHref className="w-full">
+          <Button variant="outline" className="w-full">
+            View Course <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function PersonalizedRecommendationsSection() {
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRecommendations() {
+      setIsLoading(true);
+      try {
+        const input: PersonalizedRecommendationsInput = {
+          studyHistory: "Completed: Introduction to Algebra, Basics of Physics. In progress: Calculus I.",
+          userPreferences: "Interested in engineering and computer science.",
+          numberOfRecommendations: 3,
+        };
+        const result: PersonalizedRecommendationsOutput = await getPersonalizedRecommendations(input);
+        setRecommendations(result.recommendations);
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+        setRecommendations(["Could not load recommendations."]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchRecommendations();
+  }, []);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center text-2xl font-headline">
+          <Sparkles className="mr-2 h-6 w-6 text-primary" /> Recommended for You
+        </CardTitle>
+        <CardDescription>Courses tailored to your learning path.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p>Loading recommendations...</p>
+        ) : (
+          <ul className="space-y-3">
+            {recommendations.map((rec, index) => (
+              <li key={index} className="flex items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary transition-colors">
+                <BookOpen className="h-5 w-5 mr-3 text-primary" />
+                <span className="text-base">{rec}</span>
+                <Button variant="ghost" size="sm" className="ml-auto">View</Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AiStudyTipSection() {
+  const [tip, setTip] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStudyTip() {
+      setIsLoading(true);
+      try {
+        const input: GenerateStudyTipInput = { topic: "Effective Learning Strategies" };
+        const result: GenerateStudyTipOutput = await generateStudyTip(input);
+        setTip(result.tip);
+      } catch (error) {
+        console.error("Failed to fetch study tip:", error);
+        setTip("Could not load study tip at the moment.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchStudyTip();
+  }, []);
+
+  return (
+    <Card className="bg-gradient-to-br from-accent/80 to-primary/80 text-accent-foreground shadow-xl">
+      <CardHeader>
+        <CardTitle className="flex items-center text-2xl font-headline">
+          <Lightbulb className="mr-2 h-6 w-6" /> AI Study Tip
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? <p>Loading tip...</p> : <p className="text-lg">{tip}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+export default function DashboardPage() {
+  return (
+    <div className="space-y-8">
+      <section className="text-center py-8 bg-card rounded-xl shadow-md">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Welcome to Study Hub!</h1>
+        <p className="text-xl text-muted-foreground mb-8">Your journey to academic success starts here.</p>
+        <div className="max-w-2xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="What do you want to learn today?"
+              className="w-full rounded-full h-16 pl-14 pr-6 text-lg shadow-inner"
+            />
+          </div>
+        </div>
+      </section>
+
+      <PersonalizedRecommendationsSection />
+
+      <section>
+        <h2 className="text-3xl font-semibold mb-6 flex items-center font-headline">
+          <TrendingUp className="mr-3 h-8 w-8 text-primary" /> Popular Courses
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {mockCourses.slice(0,4).map(course => <CourseCard key={course.id} course={course} />)}
+        </div>
+      </section>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-2xl font-headline">
+                <CalendarDays className="mr-2 h-6 w-6 text-primary" /> Ongoing Exams & Deadlines
+              </CardTitle>
+              <CardDescription>Stay updated with important academic events.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {mockExams.map(exam => (
+                <div key={exam.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <h3 className="font-semibold text-lg text-primary">{exam.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{exam.summary}</p>
+                  <Link href={exam.link} target="_blank" rel="noopener noreferrer">
+                    <Button variant="link" className="p-0 h-auto mt-2 text-sm">
+                      Learn More <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="lg:col-span-1">
+          <AiStudyTipSection />
+        </div>
+      </div>
+
+    </div>
+  );
+}
