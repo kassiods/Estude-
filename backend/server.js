@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 });
 
 // API Routes
-app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes); // Changed from '/users' to '/api/users'
 // app.use('/api/courses', courseRoutes);
 // app.use('/api/modules', moduleRoutes);
 // app.use('/api/contents', contentRoutes);

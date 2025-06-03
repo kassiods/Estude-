@@ -14,13 +14,60 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookHeart } from "lucide-react";
+import React, { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    router.push("/dashboard");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Conta Criada!",
+          description: data.message || "Sua conta foi criada com sucesso. Verifique seu email para confirmação, se necessário.",
+          variant: "default",
+        });
+        // Optionally redirect or clear form
+        // router.push("/login"); 
+        setName('');
+        setEmail('');
+        setPassword('');
+      } else {
+        toast({
+          title: "Erro ao Criar Conta",
+          description: data.error || "Não foi possível criar sua conta. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast({
+        title: "Erro de Rede",
+        description: "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,7 +86,15 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo</Label>
-              <Input id="name" placeholder="Seu Nome" required  className="text-base"/>
+              <Input 
+                id="name" 
+                placeholder="Seu Nome" 
+                required  
+                className="text-base"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -48,15 +103,26 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="voce@exemplo.com"
                 required
-                 className="text-base"
+                className="text-base"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" required className="text-base"/>
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                className="text-base"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
-            <Button type="submit" className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
-              Criar Conta
+            <Button type="submit" className="w-full text-lg py-6 bg-primary hover:bg-primary/90" disabled={isLoading}>
+              {isLoading ? 'Criando Conta...' : 'Criar Conta'}
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
