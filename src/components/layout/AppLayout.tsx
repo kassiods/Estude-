@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // Correto para App Router
 import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,7 @@ const mockUser = {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter(); // Inicializa o router aqui
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPathname, setCurrentPathname] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
@@ -73,6 +74,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setCurrentPathname(pathname);
   }, [pathname]);
 
+  const handleLogout = () => {
+    // Em uma implementação real, você chamaria supabase.auth.signOut() aqui.
+    // Ex: try { await supabase.auth.signOut(); } catch (error) { console.error("Error signing out:", error); }
+    // console.log("Tentando redirecionar para /login..."); // Para depuração
+    router.push('/login');
+    if (isSidebarOpen) { // Fecha o sidebar mobile se estiver aberto
+      setIsSidebarOpen(false);
+    }
+  };
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Painel' },
@@ -99,7 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </ScrollArea>
       <div className="mt-auto border-t border-sidebar-border p-4 space-y-2">
         <NavItem href="/settings" icon={Settings} label="Configurações" pathname={currentPathname} />
-        <Button variant="ghost" className="w-full justify-start text-base py-6">
+        <Button variant="ghost" className="w-full justify-start text-base py-6" onClick={handleLogout}>
           <LogOut className="mr-3 h-5 w-5" />
           Sair
         </Button>
@@ -139,7 +149,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          <div className="ml-auto flex items-center gap-2"> {/* Reduced gap from 4 to 2 for theme toggle */}
+          <div className="ml-auto flex items-center gap-2">
              <Button variant="ghost" size="icon" className="rounded-full">
                 <Bell className="h-6 w-6" />
                 <span className="sr-only">Notificações</span>
@@ -185,7 +195,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuItem>
                 {mockUser.isPremium && <DropdownMenuItem>Gerenciar Assinatura</DropdownMenuItem>}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}> {/* onClick está aqui */}
+                  <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
