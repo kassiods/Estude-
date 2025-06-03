@@ -29,8 +29,10 @@ export default function RegisterPage() {
     event.preventDefault();
     setIsLoading(true);
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+
     try {
-      const response = await fetch('http://localhost:3001/api/users/register', {
+      const response = await fetch(`${backendUrl}/api/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +56,7 @@ export default function RegisterPage() {
       } else {
         toast({
           title: "Erro ao Criar Conta",
-          description: data.error || "Não foi possível criar sua conta. Tente novamente.",
+          description: data.error || data.message || "Não foi possível criar sua conta. Tente novamente.",
           variant: "destructive",
         });
       }
@@ -62,7 +64,7 @@ export default function RegisterPage() {
       console.error("Registration error:", error);
       toast({
         title: "Erro de Rede",
-        description: "Não foi possível conectar ao servidor. Verifique sua conexão e se o servidor backend está em execução.",
+        description: "Não foi possível conectar ao servidor. Verifique sua conexão e se o servidor backend está em execução e acessível.",
         variant: "destructive",
       });
     } finally {
