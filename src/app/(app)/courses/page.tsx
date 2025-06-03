@@ -1,7 +1,8 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,9 +48,20 @@ function CourseItemCard({ course }: { course: Course }) {
 }
 
 export default function CoursesPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
+  const initialSearchTerm = searchParams.get('search') || '';
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+
+  useEffect(() => {
+    // Update searchTerm if query parameter changes after initial load
+    const querySearchTerm = searchParams.get('search');
+    if (querySearchTerm && querySearchTerm !== searchTerm) {
+      setSearchTerm(querySearchTerm);
+    }
+  }, [searchParams, searchTerm]);
+
 
   const normalizeText = (text: string) => {
     return text
@@ -150,9 +162,9 @@ export default function CoursesPage() {
       ) : (
         <div className="text-center py-12">
           <p className="text-xl text-muted-foreground">Nenhum curso encontrado com seus critérios.</p>
+          {initialSearchTerm && <p className="text-md text-muted-foreground mt-2">Termo buscado: "{initialSearchTerm}"</p>}
         </div>
       )}
     </div>
   );
 }
-

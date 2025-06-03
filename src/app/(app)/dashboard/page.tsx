@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowRight, BookOpen, Search, Sparkles, TrendingUp, CalendarDays, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { getPersonalizedRecommendations, PersonalizedRecommendationsInput, PersonalizedRecommendationsOutput } from '@/ai/flows/personalized-recommendations';
 import { generateStudyTip, GenerateStudyTipInput, GenerateStudyTipOutput } from '@/ai/flows/ai-powered-highlights';
 
@@ -91,6 +92,7 @@ function PersonalizedRecommendationsSection() {
               <li key={index} className="flex items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary transition-colors">
                 <BookOpen className="h-5 w-5 mr-3 text-primary" />
                 <span className="text-base">{rec}</span>
+                {/* Potential: Link to course page if title matches a known course */}
                 <Button variant="ghost" size="sm" className="ml-auto">Ver</Button>
               </li>
             ))}
@@ -138,20 +140,34 @@ function AiStudyTipSection() {
 
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [searchTermDashboard, setSearchTermDashboard] = useState('');
+
+  const handleDashboardSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (searchTermDashboard.trim()) {
+      router.push(`/courses?search=${encodeURIComponent(searchTermDashboard.trim())}`);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <section className="text-center py-8 bg-card rounded-xl shadow-md">
         <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Bem-vindo ao Study Hub!</h1>
         <p className="text-xl text-muted-foreground mb-8">Sua jornada para o sucesso acadêmico começa aqui.</p>
         <div className="max-w-2xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="O que você quer aprender hoje?"
-              className="w-full rounded-full h-16 pl-14 pr-6 text-lg shadow-inner"
-            />
-          </div>
+          <form onSubmit={handleDashboardSearch}>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="O que você quer aprender hoje?"
+                className="w-full rounded-full h-16 pl-14 pr-6 text-lg shadow-inner"
+                value={searchTermDashboard}
+                onChange={(e) => setSearchTermDashboard(e.target.value)}
+              />
+            </div>
+          </form>
         </div>
       </section>
 
