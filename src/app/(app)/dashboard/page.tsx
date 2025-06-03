@@ -109,8 +109,7 @@ function AiStudyTipSection() {
     async function fetchStudyTip() {
       setIsLoading(true);
       try {
-        // Mantendo o tópico em inglês para o prompt da AI, a menos que a AI também seja traduzida
-        const input: GenerateStudyTipInput = { topic: "Effective Learning Strategies" }; 
+        const input: GenerateStudyTipInput = { topic: "Estratégias Eficazes de Aprendizagem" }; 
         const result: GenerateStudyTipOutput = await generateStudyTip(input);
         setTip(result.tip);
       } catch (error) {

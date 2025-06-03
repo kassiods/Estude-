@@ -29,7 +29,7 @@ const prompt = ai.definePrompt({
   name: 'generateStudyTipPrompt',
   input: {schema: GenerateStudyTipInputSchema},
   output: {schema: GenerateStudyTipOutputSchema},
-  prompt: `You are an expert study advisor. Generate a concise and helpful study tip for the following topic: {{{topic}}}`,
+  prompt: `Você é um conselheiro de estudos especialista. Gere uma dica de estudo concisa e útil em português do Brasil para o seguinte tópico: {{{topic}}}`,
 });
 
 const generateStudyTipFlow = ai.defineFlow(
