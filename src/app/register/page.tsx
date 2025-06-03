@@ -62,7 +62,7 @@ export default function RegisterPage() {
       console.error("Registration error:", error);
       toast({
         title: "Erro de Rede",
-        description: "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+        description: "Não foi possível conectar ao servidor. Verifique sua conexão e se o servidor backend está em execução.",
         variant: "destructive",
       });
     } finally {
