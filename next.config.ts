@@ -19,9 +19,9 @@ const nextConfig: NextConfig = {
     ],
   },
   allowedDevOrigins: [
-    'https://9003-firebase-studio-1748989356421.cluster-uf6urqn4lned4spwk4xorq6bpo.cloudworkstations.dev',
-    'http://9003-firebase-studio-1748989356421.cluster-uf6urqn4lned4spwk4xorq6bpo.cloudworkstations.dev',
-    'https://3001-firebase-studio-1748989356421.cluster-uf6urqn4lned4spwk4xorq6bpo.cloudworkstations.dev'
+    '9003-firebase-studio-1748989356421.cluster-uf6urqn4lned4spwk4xorq6bpo.cloudworkstations.dev',
+    // The backend URL might also be relevant if there are dev-time interactions, keeping it as per previous suggestions.
+    '3001-firebase-studio-1748989356421.cluster-uf6urqn4lned4spwk4xorq6bpo.cloudworkstations.dev',
   ],
 };
 
