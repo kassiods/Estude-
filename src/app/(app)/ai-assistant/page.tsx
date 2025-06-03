@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -28,10 +29,10 @@ export default function AiAssistantPage() {
     setMessages([
       {
         id: 'initial-ai-message',
-        text: `Hello ${mockUser.name}! I'm your AI Study Assistant. How can I help you today? You can ask me to explain concepts, create study plans, or recommend content.`,
+        text: `Olá ${mockUser.name}! Sou seu Assistente de Estudos AI. Como posso te ajudar hoje? Você pode me pedir para explicar conceitos, criar planos de estudo ou recomendar conteúdo.`,
         sender: 'ai',
         timestamp: new Date(),
-        name: 'AI Assistant'
+        name: 'Assistente AI'
       }
     ]);
   }, []);
@@ -40,7 +41,7 @@ export default function AiAssistantPage() {
     const userMessage: Message = {
       id: Date.now().toString() + '-user',
       text,
-      sender: mockUser.id, // Use mockUser.id for sender to align with ChatInterface logic
+      sender: mockUser.id, 
       timestamp: new Date(),
       name: mockUser.name,
       avatar: mockUser.avatar,
@@ -50,23 +51,23 @@ export default function AiAssistantPage() {
 
     try {
       const input: AiStudyAssistantInput = { query: text };
-      const result: AiStudyAssistantOutput = await aiStudyAssistant(input);
+      const result: AiStudyAssistantOutput = await aiStudyAssistant(input); // Prompt is in English, response will be too unless AI is instructed otherwise
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
-        text: result.response,
+        text: result.response, // Consider if AI response needs translation or if prompt should ask for pt-BR
         sender: 'ai',
         timestamp: new Date(),
-        name: 'AI Assistant'
+        name: 'Assistente AI'
       };
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("AI Assistant error:", error);
       const errorMessage: Message = {
         id: Date.now().toString() + '-error',
-        text: "Sorry, I encountered an error. Please try again.",
+        text: "Desculpe, encontrei um erro. Por favor, tente novamente.",
         sender: 'ai',
         timestamp: new Date(),
-        name: 'AI Assistant'
+        name: 'Assistente AI'
       };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
@@ -79,9 +80,9 @@ export default function AiAssistantPage() {
       <div className="flex flex-col items-center justify-center h-full p-8">
         <Alert className="max-w-md text-center bg-card shadow-xl">
           <ShieldCheck className="h-8 w-8 mx-auto mb-4 text-primary" />
-          <AlertTitle className="text-2xl font-bold mb-2 font-headline">Premium Feature</AlertTitle>
+          <AlertTitle className="text-2xl font-bold mb-2 font-headline">Recurso Premium</AlertTitle>
           <AlertDescription className="text-lg">
-            The AI Study Assistant is available exclusively for Premium members. Upgrade your account to unlock this and many other powerful features!
+            O Assistente de Estudos AI está disponível exclusivamente para membros Premium. Atualize sua conta para desbloquear este e muitos outros recursos poderosos!
           </AlertDescription>
         </Alert>
       </div>
@@ -96,9 +97,9 @@ export default function AiAssistantPage() {
         messages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
-        chatTitle="AI Study Assistant"
-        chatDescription="Your personal AI tutor for doubts, summaries, and study plans."
-        placeholder="Ask the AI Assistant..."
+        chatTitle="Assistente de Estudos AI"
+        chatDescription="Seu tutor pessoal de IA para dúvidas, resumos e planos de estudo."
+        placeholder="Pergunte ao Assistente AI..."
         currentUser={currentUserForChat}
       />
     </div>

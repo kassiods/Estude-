@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -45,13 +46,13 @@ export function CourseCard({ course }: CourseCardProps) {
           {course.description}
         </CardDescription>
         <div className="text-xs text-muted-foreground">
-          <span>{course.modules} modules</span> | <span className="capitalize">{course.difficulty}</span>
+          <span>{course.modules} módulos</span> | <span className="capitalize">{course.difficulty}</span>
         </div>
       </CardContent>
       <CardFooter className="p-6 pt-0">
         <Link href={`/courses/${course.id}`} passHref className="w-full">
           <Button variant="outline" className="w-full">
-            Explore Course <ArrowRight className="ml-2 h-4 w-4" />
+            Explorar Curso <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
       </CardFooter>

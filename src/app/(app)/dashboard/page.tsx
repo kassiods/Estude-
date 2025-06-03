@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -13,15 +14,15 @@ import { generateStudyTip, GenerateStudyTipInput, GenerateStudyTipOutput } from 
 
 // Mock data
 const mockCourses = [
-  { id: '1', title: 'Advanced Calculus', description: 'Master the fundamentals of advanced calculus.', modules: 12, difficulty: 'Advanced', image: 'https://placehold.co/600x400.png', dataAiHint: 'math textbook' },
-  { id: '2', title: 'Organic Chemistry Basics', description: 'An introduction to organic chemistry.', modules: 10, difficulty: 'Intermediate', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry lab' },
-  { id: '3', title: 'World History: Ancient Civilizations', description: 'Explore the dawn of human civilization.', modules: 8, difficulty: 'Beginner', image: 'https://placehold.co/600x400.png', dataAiHint: 'historical map' },
-  { id: '4', title: 'Python for Data Science', description: 'Learn Python programming for data analysis.', modules: 15, difficulty: 'Intermediate', image: 'https://placehold.co/600x400.png', dataAiHint: 'code screen' },
+  { id: '1', title: 'Cálculo Avançado', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', image: 'https://placehold.co/600x400.png', dataAiHint: 'math textbook' },
+  { id: '2', title: 'Química Orgânica Básica', description: 'Uma introdução à química orgânica.', modules: 10, difficulty: 'Intermediário', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry lab' },
+  { id: '3', title: 'História Mundial: Civilizações Antigas', description: 'Explore o alvorecer da civilização humana.', modules: 8, difficulty: 'Iniciante', image: 'https://placehold.co/600x400.png', dataAiHint: 'historical map' },
+  { id: '4', title: 'Python para Ciência de Dados', description: 'Aprenda programação Python para análise de dados.', modules: 15, difficulty: 'Intermediário', image: 'https://placehold.co/600x400.png', dataAiHint: 'code screen' },
 ];
 
 const mockExams = [
-  { id: '1', title: 'ENEM 2024', summary: 'National High School Exam, inscriptions open until 30/07.', link: '#' },
-  { id: '2', title: 'Vestibular FUVEST 2025', summary: 'University of São Paulo entrance exam. Check the official notice.', link: '#' },
+  { id: '1', title: 'ENEM 2024', summary: 'Exame Nacional do Ensino Médio, inscrições abertas até 30/07.', link: '#' },
+  { id: '2', title: 'Vestibular FUVEST 2025', summary: 'Exame de ingresso da Universidade de São Paulo. Confira o edital oficial.', link: '#' },
 ];
 
 function CourseCard({ course }: { course: typeof mockCourses[0] }) {
@@ -34,13 +35,13 @@ function CourseCard({ course }: { course: typeof mockCourses[0] }) {
         <CardTitle className="text-xl mb-2 font-headline">{course.title}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground mb-4">{course.description}</CardDescription>
         <div className="text-xs text-muted-foreground">
-          <span>{course.modules} modules</span> | <span>{course.difficulty}</span>
+          <span>{course.modules} módulos</span> | <span>{course.difficulty}</span>
         </div>
       </CardContent>
       <CardFooter className="p-6 pt-0">
         <Link href={`/courses/${course.id}`} passHref className="w-full">
           <Button variant="outline" className="w-full">
-            View Course <ArrowRight className="ml-2 h-4 w-4" />
+            Ver Curso <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
       </CardFooter>
@@ -57,15 +58,15 @@ function PersonalizedRecommendationsSection() {
       setIsLoading(true);
       try {
         const input: PersonalizedRecommendationsInput = {
-          studyHistory: "Completed: Introduction to Algebra, Basics of Physics. In progress: Calculus I.",
-          userPreferences: "Interested in engineering and computer science.",
+          studyHistory: "Concluído: Introdução à Álgebra, Fundamentos de Física. Em progresso: Cálculo I.",
+          userPreferences: "Interessado em engenharia e ciência da computação.",
           numberOfRecommendations: 3,
         };
         const result: PersonalizedRecommendationsOutput = await getPersonalizedRecommendations(input);
         setRecommendations(result.recommendations);
       } catch (error) {
-        console.error("Failed to fetch recommendations:", error);
-        setRecommendations(["Could not load recommendations."]);
+        console.error("Falha ao buscar recomendações:", error);
+        setRecommendations(["Não foi possível carregar as recomendações."]);
       } finally {
         setIsLoading(false);
       }
@@ -77,20 +78,20 @@ function PersonalizedRecommendationsSection() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-headline">
-          <Sparkles className="mr-2 h-6 w-6 text-primary" /> Recommended for You
+          <Sparkles className="mr-2 h-6 w-6 text-primary" /> Recomendado para Você
         </CardTitle>
-        <CardDescription>Courses tailored to your learning path.</CardDescription>
+        <CardDescription>Cursos adaptados ao seu caminho de aprendizado.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p>Loading recommendations...</p>
+          <p>Carregando recomendações...</p>
         ) : (
           <ul className="space-y-3">
             {recommendations.map((rec, index) => (
               <li key={index} className="flex items-center p-3 bg-secondary/50 rounded-md hover:bg-secondary transition-colors">
                 <BookOpen className="h-5 w-5 mr-3 text-primary" />
                 <span className="text-base">{rec}</span>
-                <Button variant="ghost" size="sm" className="ml-auto">View</Button>
+                <Button variant="ghost" size="sm" className="ml-auto">Ver</Button>
               </li>
             ))}
           </ul>
@@ -108,12 +109,13 @@ function AiStudyTipSection() {
     async function fetchStudyTip() {
       setIsLoading(true);
       try {
-        const input: GenerateStudyTipInput = { topic: "Effective Learning Strategies" };
+        // Mantendo o tópico em inglês para o prompt da AI, a menos que a AI também seja traduzida
+        const input: GenerateStudyTipInput = { topic: "Effective Learning Strategies" }; 
         const result: GenerateStudyTipOutput = await generateStudyTip(input);
         setTip(result.tip);
       } catch (error) {
-        console.error("Failed to fetch study tip:", error);
-        setTip("Could not load study tip at the moment.");
+        console.error("Falha ao buscar dica de estudo:", error);
+        setTip("Não foi possível carregar a dica de estudo no momento.");
       } finally {
         setIsLoading(false);
       }
@@ -125,11 +127,11 @@ function AiStudyTipSection() {
     <Card className="bg-gradient-to-br from-accent/80 to-primary/80 text-accent-foreground shadow-xl">
       <CardHeader>
         <CardTitle className="flex items-center text-2xl font-headline">
-          <Lightbulb className="mr-2 h-6 w-6" /> AI Study Tip
+          <Lightbulb className="mr-2 h-6 w-6" /> Dica de Estudo AI
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading tip...</p> : <p className="text-lg">{tip}</p>}
+        {isLoading ? <p>Carregando dica...</p> : <p className="text-lg">{tip}</p>}
       </CardContent>
     </Card>
   );
@@ -140,14 +142,14 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="text-center py-8 bg-card rounded-xl shadow-md">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Welcome to Study Hub!</h1>
-        <p className="text-xl text-muted-foreground mb-8">Your journey to academic success starts here.</p>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Bem-vindo ao Study Hub!</h1>
+        <p className="text-xl text-muted-foreground mb-8">Sua jornada para o sucesso acadêmico começa aqui.</p>
         <div className="max-w-2xl mx-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="What do you want to learn today?"
+              placeholder="O que você quer aprender hoje?"
               className="w-full rounded-full h-16 pl-14 pr-6 text-lg shadow-inner"
             />
           </div>
@@ -158,7 +160,7 @@ export default function DashboardPage() {
 
       <section>
         <h2 className="text-3xl font-semibold mb-6 flex items-center font-headline">
-          <TrendingUp className="mr-3 h-8 w-8 text-primary" /> Popular Courses
+          <TrendingUp className="mr-3 h-8 w-8 text-primary" /> Cursos Populares
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {mockCourses.slice(0,4).map(course => <CourseCard key={course.id} course={course} />)}
@@ -170,9 +172,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-2xl font-headline">
-                <CalendarDays className="mr-2 h-6 w-6 text-primary" /> Ongoing Exams & Deadlines
+                <CalendarDays className="mr-2 h-6 w-6 text-primary" /> Provas e Prazos Atuais
               </CardTitle>
-              <CardDescription>Stay updated with important academic events.</CardDescription>
+              <CardDescription>Mantenha-se atualizado com eventos acadêmicos importantes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {mockExams.map(exam => (
@@ -181,7 +183,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground mt-1">{exam.summary}</p>
                   <Link href={exam.link} target="_blank" rel="noopener noreferrer">
                     <Button variant="link" className="p-0 h-auto mt-2 text-sm">
-                      Learn More <ArrowRight className="ml-1 h-3 w-3" />
+                      Saiba Mais <ArrowRight className="ml-1 h-3 w-3" />
                     </Button>
                   </Link>
                 </div>

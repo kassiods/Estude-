@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -14,19 +15,19 @@ interface ChatChannel {
 }
 
 const mockChannels: ChatChannel[] = [
-  { id: 'general', name: 'General Discussion', description: 'Talk about anything study-related.' },
-  { id: 'math_enem', name: 'Mathematics - ENEM Prep', description: 'Focus on math for ENEM.' },
-  { id: 'history_vestibular', name: 'History - Vestibular', description: 'Discuss history topics for various exams.' },
-  { id: 'study_tips', name: 'Study Tips & Tricks', description: 'Share your best study strategies.' },
+  { id: 'general', name: 'Discussão Geral', description: 'Converse sobre qualquer coisa relacionada a estudos.' },
+  { id: 'math_enem', name: 'Matemática - Preparatório ENEM', description: 'Foco em matemática para o ENEM.' },
+  { id: 'history_vestibular', name: 'História - Vestibular', description: 'Discuta tópicos de história para diversos exames.' },
+  { id: 'study_tips', name: 'Dicas e Truques de Estudo', description: 'Compartilhe suas melhores estratégias de estudo.' },
 ];
 
 const mockMessagesStore: { [channelId: string]: Message[] } = {
   general: [
-    { id: '1', text: 'Welcome to the general discussion channel!', sender: 'Admin', name: 'Admin', timestamp: new Date(Date.now() - 1000 * 60 * 5) },
-    { id: '2', text: 'Anyone here studying for FUVEST?', sender: 'user_ana', name: 'Ana Silva', avatar: 'https://placehold.co/100x100.png?text=AS', timestamp: new Date(Date.now() - 1000 * 60 * 3) },
+    { id: '1', text: 'Bem-vindo ao canal de discussão geral!', sender: 'Admin', name: 'Admin', timestamp: new Date(Date.now() - 1000 * 60 * 5) },
+    { id: '2', text: 'Alguém aqui estudando para a FUVEST?', sender: 'user_ana', name: 'Ana Silva', avatar: 'https://placehold.co/100x100.png?text=AS', timestamp: new Date(Date.now() - 1000 * 60 * 3) },
   ],
   math_enem: [
-    { id: '3', text: 'Let\'s tackle some probability questions for ENEM!', sender: 'user_joao', name: 'João Costa', avatar: 'https://placehold.co/100x100.png?text=JC', timestamp: new Date(Date.now() - 1000 * 60 * 10) },
+    { id: '3', text: 'Vamos resolver algumas questões de probabilidade para o ENEM!', sender: 'user_joao', name: 'João Costa', avatar: 'https://placehold.co/100x100.png?text=JC', timestamp: new Date(Date.now() - 1000 * 60 * 10) },
   ],
   history_vestibular: [],
   study_tips: [],
@@ -42,11 +43,10 @@ const mockCurrentUser = {
 export default function CommunityChatPage() {
   const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(mockChannels[0]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // For simulating message sending
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     if (selectedChannel) {
-      // Simulate fetching messages for the selected channel
       setMessages(mockMessagesStore[selectedChannel.id] || []);
     }
   }, [selectedChannel]);
@@ -66,7 +66,6 @@ export default function CommunityChatPage() {
       avatar: mockCurrentUser.avatar,
       timestamp: new Date(),
     };
-    // Simulate sending message and updating local store & UI
     setTimeout(() => {
       mockMessagesStore[selectedChannel.id] = [...(mockMessagesStore[selectedChannel.id] || []), newMessage];
       setMessages(prevMessages => [...prevMessages, newMessage]);
@@ -79,7 +78,7 @@ export default function CommunityChatPage() {
       <Card className="shadow-lg flex flex-col">
         <CardHeader className="border-b">
           <CardTitle className="text-xl flex items-center font-headline">
-            <Users className="mr-2 h-6 w-6 text-primary" /> Channels
+            <Users className="mr-2 h-6 w-6 text-primary" /> Canais
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1">
@@ -112,14 +111,14 @@ export default function CommunityChatPage() {
             isLoading={isLoading}
             chatTitle={selectedChannel.name}
             chatDescription={selectedChannel.description}
-            placeholder={`Message #${selectedChannel.name.toLowerCase().replace(/\s+/g, '-')}`}
+            placeholder={`Mensagem #${selectedChannel.name.toLowerCase().replace(/\s+/g, '-')}`}
             currentUser={mockCurrentUser}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-card rounded-lg shadow-xl p-8">
             <MessageSquare className="h-16 w-16 text-muted-foreground mb-6" />
-            <h2 className="text-2xl font-semibold text-muted-foreground font-headline">Select a channel</h2>
-            <p className="text-muted-foreground mt-2">Choose a channel from the list to start chatting.</p>
+            <h2 className="text-2xl font-semibold text-muted-foreground font-headline">Selecione um canal</h2>
+            <p className="text-muted-foreground mt-2">Escolha um canal da lista para começar a conversar.</p>
           </div>
         )}
       </div>

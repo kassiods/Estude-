@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -10,12 +11,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const mockCoursesData = [
-  { id: '1', title: 'Advanced Calculus', description: 'Master the fundamentals of advanced calculus.', modules: 12, difficulty: 'Advanced', category: 'Mathematics', image: 'https://placehold.co/600x400.png', dataAiHint: 'math equation' },
-  { id: '2', title: 'Organic Chemistry Basics', description: 'An introduction to organic chemistry.', modules: 10, difficulty: 'Intermediate', category: 'Science', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry molecules' },
-  { id: '3', title: 'World History: Ancient Civilizations', description: 'Explore the dawn of human civilization.', modules: 8, difficulty: 'Beginner', category: 'Humanities', image: 'https://placehold.co/600x400.png', dataAiHint: 'ancient ruins' },
-  { id: '4', title: 'Python for Data Science', description: 'Learn Python programming for data analysis.', modules: 15, difficulty: 'Intermediate', category: 'Programming', image: 'https://placehold.co/600x400.png', dataAiHint: 'python code' },
-  { id: '5', title: 'Introduction to Economics', description: 'Understand basic economic principles.', modules: 9, difficulty: 'Beginner', category: 'Social Sciences', image: 'https://placehold.co/600x400.png', dataAiHint: 'stock chart' },
-  { id: '6', title: 'Modern Art History', description: 'A survey of art from the 19th century to present.', modules: 11, difficulty: 'Intermediate', category: 'Arts', image: 'https://placehold.co/600x400.png', dataAiHint: 'art gallery' },
+  { id: '1', title: 'Cálculo Avançado', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', category: 'Matemática', image: 'https://placehold.co/600x400.png', dataAiHint: 'math equation' },
+  { id: '2', title: 'Química Orgânica Básica', description: 'Uma introdução à química orgânica.', modules: 10, difficulty: 'Intermediário', category: 'Ciências', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry molecules' },
+  { id: '3', title: 'História Mundial: Civilizações Antigas', description: 'Explore o alvorecer da civilização humana.', modules: 8, difficulty: 'Iniciante', category: 'Humanidades', image: 'https://placehold.co/600x400.png', dataAiHint: 'ancient ruins' },
+  { id: '4', title: 'Python para Ciência de Dados', description: 'Aprenda programação Python para análise de dados.', modules: 15, difficulty: 'Intermediário', category: 'Programação', image: 'https://placehold.co/600x400.png', dataAiHint: 'python code' },
+  { id: '5', title: 'Introdução à Economia', description: 'Entenda os princípios econômicos básicos.', modules: 9, difficulty: 'Iniciante', category: 'Ciências Sociais', image: 'https://placehold.co/600x400.png', dataAiHint: 'stock chart' },
+  { id: '6', title: 'História da Arte Moderna', description: 'Um panorama da arte do século XIX até o presente.', modules: 11, difficulty: 'Intermediário', category: 'Artes', image: 'https://placehold.co/600x400.png', dataAiHint: 'art gallery' },
 ];
 
 type Course = typeof mockCoursesData[0];
@@ -31,13 +32,13 @@ function CourseItemCard({ course }: { course: Course }) {
         <CardTitle className="text-xl mb-2 font-headline">{course.title}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground mb-4 h-20 overflow-hidden text-ellipsis">{course.description}</CardDescription>
         <div className="text-xs text-muted-foreground">
-          <span>{course.modules} modules</span> | <span className="capitalize">{course.difficulty}</span>
+          <span>{course.modules} módulos</span> | <span className="capitalize">{course.difficulty}</span>
         </div>
       </CardContent>
       <CardFooter className="p-6 pt-0">
         <Link href={`/courses/${course.id}`} passHref className="w-full">
           <Button variant="outline" className="w-full">
-            Explore Course <ArrowRight className="ml-2 h-4 w-4" />
+            Explorar Curso <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
       </CardFooter>
@@ -50,6 +51,15 @@ export default function CoursesPage() {
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
+  const translatedDifficulty = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'advanced': return 'avançado';
+      case 'intermediate': return 'intermediário';
+      case 'beginner': return 'iniciante';
+      default: return difficulty;
+    }
+  };
+  
   const filteredCourses = mockCoursesData.filter(course => {
     return (
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -59,23 +69,30 @@ export default function CoursesPage() {
   });
 
   const categories = ['all', ...new Set(mockCoursesData.map(c => c.category))];
-  const difficulties = ['all', 'beginner', 'intermediate', 'advanced'];
+  const difficulties = ['all', 'iniciante', 'intermediário', 'avançado'];
+  const displayDifficulties = {
+    'all': 'Todas as Dificuldades',
+    'iniciante': 'Iniciante',
+    'intermediário': 'Intermediário',
+    'avançado': 'Avançado'
+  };
+
 
   return (
     <div className="space-y-8">
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="text-3xl font-bold flex items-center font-headline">
-            <BookOpen className="mr-3 h-8 w-8 text-primary" /> Explore Courses
+            <BookOpen className="mr-3 h-8 w-8 text-primary" /> Explorar Cursos
           </CardTitle>
-          <CardDescription>Find the perfect course to expand your knowledge.</CardDescription>
+          <CardDescription>Encontre o curso perfeito para expandir seu conhecimento.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search courses..."
+              placeholder="Buscar cursos..."
               className="w-full rounded-lg pl-10 h-12 text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -83,33 +100,35 @@ export default function CoursesPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="category-filter" className="block text-sm font-medium text-muted-foreground mb-1">Category</label>
+              <label htmlFor="category-filter" className="block text-sm font-medium text-muted-foreground mb-1">Categoria</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger id="category-filter" className="h-12 text-base">
-                  <SelectValue placeholder="Filter by category" />
+                  <SelectValue placeholder="Filtrar por categoria" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(cat => (
-                    <SelectItem key={cat} value={cat} className="capitalize text-base">{cat === 'all' ? 'All Categories' : cat}</SelectItem>
+                    <SelectItem key={cat} value={cat} className="capitalize text-base">{cat === 'all' ? 'Todas as Categorias' : cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label htmlFor="difficulty-filter" className="block text-sm font-medium text-muted-foreground mb-1">Difficulty</label>
+              <label htmlFor="difficulty-filter" className="block text-sm font-medium text-muted-foreground mb-1">Dificuldade</label>
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                 <SelectTrigger id="difficulty-filter" className="h-12 text-base">
-                  <SelectValue placeholder="Filter by difficulty" />
+                  <SelectValue placeholder="Filtrar por dificuldade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {difficulties.map(diff => (
-                    <SelectItem key={diff} value={diff} className="capitalize text-base">{diff === 'all' ? 'All Difficulties' : diff}</SelectItem>
+                  {difficulties.map(diffKey => (
+                    <SelectItem key={diffKey} value={diffKey} className="capitalize text-base">
+                      {displayDifficulties[diffKey as keyof typeof displayDifficulties]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <Button variant="outline" className="md:self-end h-12 text-base">
-              <Filter className="mr-2 h-5 w-5" /> Apply Filters
+              <Filter className="mr-2 h-5 w-5" /> Aplicar Filtros
             </Button>
           </div>
         </CardContent>
@@ -117,11 +136,11 @@ export default function CoursesPage() {
 
       {filteredCourses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map(course => <CourseItemCard key={course.id} course={course} />)}
+          {filteredCourses.map(course => <CourseItemCard key={course.id} course={{...course, difficulty: translatedDifficulty(course.difficulty)}} />)}
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-xl text-muted-foreground">No courses found matching your criteria.</p>
+          <p className="text-xl text-muted-foreground">Nenhum curso encontrado com seus critérios.</p>
         </div>
       )}
     </div>

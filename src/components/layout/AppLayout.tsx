@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   BookOpen,
@@ -23,6 +25,8 @@ import {
   Menu,
   BookHeart,
   Bell,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -63,6 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPathname, setCurrentPathname] = useState<string | null>(null);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     setCurrentPathname(pathname);
@@ -70,11 +75,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   const navItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/courses', icon: BookOpen, label: 'Courses' },
-    { href: '/community-chat', icon: Users, label: 'Community' },
-    { href: '/ai-assistant', icon: Sparkles, label: 'AI Assistant', isPremium: true },
-    { href: '/profile', icon: UserCircle, label: 'My Profile' },
+    { href: '/dashboard', icon: LayoutDashboard, label: 'Painel' },
+    { href: '/courses', icon: BookOpen, label: 'Cursos' },
+    { href: '/community-chat', icon: Users, label: 'Comunidade' },
+    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: true },
+    { href: '/profile', icon: UserCircle, label: 'Meu Perfil' },
   ];
 
   const sidebarContent = (
@@ -93,10 +98,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </ScrollArea>
       <div className="mt-auto border-t border-sidebar-border p-4 space-y-2">
-        <NavItem href="/settings" icon={Settings} label="Settings" pathname={currentPathname} />
+        <NavItem href="/settings" icon={Settings} label="Configurações" pathname={currentPathname} />
         <Button variant="ghost" className="w-full justify-start text-base py-6">
           <LogOut className="mr-3 h-5 w-5" />
-          Logout
+          Sair
         </Button>
       </div>
     </div>
@@ -115,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 variant="outline"
                 size="icon"
                 className="shrink-0 md:hidden"
-                aria-label="Toggle navigation menu"
+                aria-label="Alternar menu de navegação"
               >
                 <Menu className="h-6 w-6" />
               </Button>
@@ -129,15 +134,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search courses, topics..."
+              placeholder="Buscar cursos, tópicos..."
               className="w-full rounded-lg bg-background pl-10 md:w-[300px] lg:w-[400px] h-12 text-base"
             />
           </div>
 
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2"> {/* Reduced gap from 4 to 2 for theme toggle */}
              <Button variant="ghost" size="icon" className="rounded-full">
                 <Bell className="h-6 w-6" />
-                <span className="sr-only">Notifications</span>
+                <span className="sr-only">Notificações</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                className="rounded-full h-10 w-10" 
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+                <span className="sr-only">Alternar tema</span>
               </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -159,15 +178,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">Profile</Link>
+                  <Link href="/profile">Perfil</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings">Settings</Link>
+                  <Link href="/settings">Configurações</Link>
                 </DropdownMenuItem>
-                {mockUser.isPremium && <DropdownMenuItem>Manage Subscription</DropdownMenuItem>}
+                {mockUser.isPremium && <DropdownMenuItem>Gerenciar Assinatura</DropdownMenuItem>}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  Logout
+                  Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

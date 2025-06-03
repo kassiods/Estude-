@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -19,8 +20,6 @@ export default function LoginPage() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // In a real app, handle login logic here
-    // For now, redirect to dashboard
     router.push("/dashboard");
   };
 
@@ -31,9 +30,9 @@ export default function LoginPage() {
           <div className="flex justify-center items-center mb-4">
             <BookHeart className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold font-headline">Welcome Back to Study Hub</CardTitle>
+          <CardTitle className="text-3xl font-bold font-headline">Bem-vindo de volta ao Study Hub</CardTitle>
           <CardDescription>
-            Enter your credentials to access your study materials.
+            Insira suas credenciais para acessar seus materiais de estudo.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -43,31 +42,31 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 required
                 className="text-base"
               />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <Link
                   href="#"
                   className="text-sm text-primary hover:underline"
                 >
-                  Forgot password?
+                  Esqueceu a senha?
                 </Link>
               </div>
               <Input id="password" type="password" required  className="text-base"/>
             </div>
             <Button type="submit" className="w-full text-lg py-6 bg-primary hover:bg-primary/90">
-              Login
+              Entrar
             </Button>
           </form>
           <div className="mt-6 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            Não tem uma conta?{" "}
             <Link href="/register" className="font-semibold text-primary hover:underline">
-              Sign up
+              Cadastre-se
             </Link>
           </div>
         </CardContent>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -11,10 +12,10 @@ import { cn } from '@/lib/utils';
 export interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'ai' | string; // string for community chat user names/ids
+  sender: 'user' | 'ai' | string; 
   avatar?: string;
   timestamp: Date;
-  name?: string; // For community chat user names
+  name?: string; 
 }
 
 interface ChatInterfaceProps {
@@ -24,7 +25,7 @@ interface ChatInterfaceProps {
   chatTitle: string;
   chatDescription?: string;
   placeholder?: string;
-  currentUser?: { id: string; name: string; avatar?: string }; // For distinguishing user messages
+  currentUser?: { id: string; name: string; avatar?: string }; 
 }
 
 export function ChatInterface({
@@ -33,7 +34,7 @@ export function ChatInterface({
   isLoading,
   chatTitle,
   chatDescription,
-  placeholder = "Type your message...",
+  placeholder = "Digite sua mensagem...",
   currentUser,
 }: ChatInterfaceProps) {
   const [inputText, setInputText] = useState('');
@@ -41,7 +42,7 @@ export function ChatInterface({
 
   const handleSend = async () => {
     if (inputText.trim()) {
-      setInputText(''); // Clear input before sending
+      setInputText(''); 
       await onSendMessage(inputText.trim());
     }
   };
@@ -116,7 +117,7 @@ export function ChatInterface({
                       <AvatarFallback>AI</AvatarFallback>
                  </Avatar>
                  <div className="bg-card border rounded-xl px-4 py-3 shadow rounded-bl-none">
-                    <p className="text-sm text-muted-foreground">AI is thinking...</p>
+                    <p className="text-sm text-muted-foreground">AI está pensando...</p>
                  </div>
               </div>
             )}
