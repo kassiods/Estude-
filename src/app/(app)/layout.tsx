@@ -60,7 +60,7 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremium, p
 // Estes dados são apenas para exibição no layout, o perfil real virá da API.
 const mockUserDisplay = {
   name: 'Usuário', 
-  email: 'usuario@studyhub.com',
+  email: 'usuario@estude.plus',
   photoUrl: 'https://placehold.co/100x100.png?text=U',
   isPremium: false, 
   initials: 'U'
@@ -119,7 +119,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-between border-b border-sidebar-border p-4 h-20">
         <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold font-headline text-primary">
           <BookHeart className="h-8 w-8" />
-          <span>Study Hub</span>
+          <span>Estude +</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-2 py-4">

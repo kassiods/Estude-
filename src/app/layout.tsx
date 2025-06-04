@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/components/layout/ThemeProviderClient';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Study Hub',
+  title: 'Estude +',
   description: 'Sua plataforma de aprendizado personalizada.',
 };
 

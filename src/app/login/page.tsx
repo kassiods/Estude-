@@ -50,7 +50,7 @@ export default function LoginPage() {
           <div className="flex justify-center items-center mb-4">
             <BookHeart className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold font-headline">Bem-vindo de volta ao Study Hub</CardTitle>
+          <CardTitle className="text-3xl font-bold font-headline">Bem-vindo de volta ao Estude +</CardTitle>
           <CardDescription>
             Insira suas credenciais para acessar seus materiais de estudo.
           </CardDescription>
