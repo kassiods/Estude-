@@ -1,4 +1,5 @@
-// src/app/(app)/layout.tsx "use client";
+
+"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -17,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Toaster, toast } from '@/components/ui/use-toast'; // Assuming useToast is for shadcn toasts
+import { toast } from '@/components/ui/use-toast'; 
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { useTheme } from 'next-themes';
 
@@ -25,10 +26,9 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
-  Sparkles, // AI Assistant
-  Bell,     // Notifications
-  MessageSquare, // Chat
-  Heart,    // Favorites
+  Sparkles, 
+  Bell,     
+  Heart,    
   UserCircle,
   Settings,
   LogOut,
@@ -38,14 +38,14 @@ import {
   Sun,
   Moon,
   Loader2,
-  BarChart3 // Progress
+  BarChart3 
 } from 'lucide-react';
 
 interface NavItemProps {
   href: string;
   icon: React.ElementType;
   label: string;
-  isPremium?: boolean; // If specific features are premium
+  isPremium?: boolean; 
   isActive: boolean;
   onClick?: () => void;
 }
@@ -75,7 +75,7 @@ interface UserDisplay {
   email: string | null;
   avatarUrl: string | null;
   initials: string;
-  isPremium: boolean; // From your Prisma schema
+  isPremium: boolean; 
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -92,54 +92,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      // This should eventually be an API call to your backend /api/users/me or similar
-      // For now, we'll use a placeholder or assume Supabase metadata + Prisma profile call
-      // If you make an API call, ensure it uses the user's session for auth
       
-      // Example: If profile data is fetched from a /api/profile endpoint
-      // const res = await fetch('/api/profile'); // This would be protected by middleware
-      // if (!res.ok) throw new Error('Failed to fetch profile');
-      // const profileData = await res.json();
-      // setUserDisplay({
-      //   name: profileData.name,
-      //   email: profileData.email,
-      //   avatarUrl: profileData.avatarUrl, // Assuming avatarUrl is part of your profile
-      //   initials: (profileData.name || profileData.email || 'U').substring(0, 2).toUpperCase(),
-      //   isPremium: profileData.isPremium,
-      // });
-
-      // Placeholder - using Supabase user metadata if available
-      // In a real app, you'd fetch from your `profiles` table via an API route
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-         // SIMULATE fetching profile from DB based on user.id
-        const tempProfile = { // This would come from Prisma via an API call
-            name: user.user_metadata?.name || user.email?.split('@')[0] || "Usuário",
-            email: user.email,
-            avatarUrl: user.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(user.email || "U")[0].toUpperCase()}`,
-            isPremium: false, // Default, fetch from DB
-        };
+         
+        const { data: profileData, error: profileError } = await supabase
+          .from('users') // Nome da sua tabela de perfis no Prisma
+          .select('name, email, photo_url, isPremium')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116: row not found
+          throw profileError;
+        }
+        
+        const name = profileData?.name || user.user_metadata?.name || user.email?.split('@')[0] || "Usuário";
+        const avatarUrl = profileData?.photo_url || user.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(name || "U")[0].toUpperCase()}`;
+
         setUserDisplay({
-            name: tempProfile.name,
-            email: tempProfile.email,
-            avatarUrl: tempProfile.avatarUrl,
-            initials: (tempProfile.name || tempProfile.email || 'U').substring(0,2).toUpperCase(),
-            isPremium: tempProfile.isPremium,
+            name: name,
+            email: profileData?.email || user.email,
+            avatarUrl: avatarUrl,
+            initials: (name || user.email || 'U').substring(0,2).toUpperCase(),
+            isPremium: profileData?.isPremium || false,
         });
       } else {
-        router.replace('/login'); // Should be caught by middleware, but as a fallback
+        router.replace('/login'); 
       }
 
     } catch (error) {
       console.error("Error fetching user profile:", error);
       toast({ title: "Erro ao carregar perfil", description: (error as Error).message, variant: "destructive"});
-      // Potentially sign out if profile fetch fails critically
-      // await supabase.auth.signOut();
-      // router.replace('/login');
     } finally {
       setIsLoadingUser(false);
     }
-  }, [supabase, router]);
+  }, [supabase, router, toast]); // Adicionado toast às dependências
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -156,7 +143,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
       }
     );
-    // Initial check
+    
      supabase.auth.getSession().then(({ data: { session }}) => {
         if (session?.user) {
           fetchUserProfile(session.user.id, session.user.email);
@@ -183,7 +170,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     } else {
       setUserDisplay(null);
       toast({ title: "Logout Efetuado", description: "Você foi desconectado." });
-      router.replace('/login'); // Go to login page after logout
+      router.replace('/login'); 
     }
     setIsSidebarOpen(false);
     setIsLoadingUser(false);
@@ -193,7 +180,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     e.preventDefault();
     if (searchTerm.trim()) {
       router.push(`/courses?search=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); // Clear search after submit
+      setSearchTerm(''); 
     }
   };
 
@@ -202,14 +189,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/courses', icon: BookOpen, label: 'Cursos' },
     { href: '/progress', icon: BarChart3, label: 'Meu Progresso' },
     { href: '/favorites', icon: Heart, label: 'Favoritos' },
-    { href: '/community-chat', icon: Users, label: 'Comunidade' }, // Placeholder
-    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: true }, // Placeholder
-    { href: '/notifications', icon: Bell, label: 'Notificações' }, // Placeholder
+    { href: '/community-chat', icon: Users, label: 'Comunidade' }, 
+    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: true }, 
+    { href: '/notifications', icon: Bell, label: 'Notificações' }, 
   ];
 
   const bottomNavItems = [
     { href: '/profile', icon: UserCircle, label: 'Meu Perfil' },
-    { href: '/settings', icon: Settings, label: 'Configurações' }, // Placeholder
+    { href: '/settings', icon: Settings, label: 'Configurações' }, 
   ];
 
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -249,9 +236,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If somehow user is null after loading and not on auth pages, middleware should catch, but this is a safeguard
+ 
   if (!userDisplay && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/api/auth')) {
-     // router.replace('/login'); // This might cause redirect loops if middleware is also redirecting
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p>Redirecionando para o login...</p>
