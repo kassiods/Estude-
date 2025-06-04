@@ -2,8 +2,10 @@
 const supabase = require('../supabase'); // Assuming supabase client is exported from there
 
 const authMiddleware = async (req, res, next) => {
+  console.log('Auth Middleware: Received Authorization Header:', req.headers.authorization); // Log para depuração
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn('Auth Middleware: Token não fornecido ou mal formatado.');
     return res.status(401).json({ message: 'Acesso não autorizado: Token não fornecido ou mal formatado.' });
   }
   const token = authHeader.split(' ')[1];
