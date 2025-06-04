@@ -48,7 +48,6 @@ async function createUser({ email, password, name }) {
 
     if (profileError) {
       console.error(`Supabase create profile error for user ID ${userId}:`, profileError.message, profileError);
-      // Tentar deletar o usuário do Auth para manter consistência
       let detailedErrorMessage = `Falha ao criar perfil do usuário após registro. Detalhe do erro: ${profileError.message}`;
       if (profileError.code === '23505') { // PostgreSQL unique_violation (e.g., email or id already exists in profiles)
         detailedErrorMessage = `Falha ao criar perfil: um perfil com este email ou ID já pode existir na tabela 'profiles'. Usuário Auth ${userId} pode precisar de limpeza ou verificação manual. Detalhe Supabase: ${profileError.details || profileError.message}`;
@@ -68,6 +67,23 @@ async function createUser({ email, password, name }) {
       throw new Error(detailedErrorMessage);
     }
     
+    if (!profileData) {
+      // Este caso é incomum se profileError não foi setado e o insert deveria ter funcionado.
+      // Pode indicar um problema com RLS para SELECT mesmo com service_role, ou alguma inconsistência.
+      const criticalErrorMessage = `CRÍTICO: Perfil não foi retornado após a inserção para o usuário ID ${userId}, e nenhum erro de inserção explícito foi recebido. Verifique as RLS e a consistência da tabela 'profiles'.`;
+      console.error(criticalErrorMessage);
+      if (userId) {
+        console.warn(`Tentando deletar usuário do Auth ${userId} devido à falha em recuperar o perfil pós-inserção.`);
+        const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
+        if (deleteUserError) {
+          console.error(`CRÍTICO: Falha ao recuperar perfil E falha ao deletar usuário do Auth ${userId}:`, deleteUserError.message);
+        } else {
+          console.log(`Usuário Auth ${userId} deletado com sucesso após falha na verificação do perfil.`);
+        }
+      }
+      throw new Error('Falha crítica: perfil não pôde ser verificado após a criação.');
+    }
+
     console.log(`Perfil criado com sucesso para o usuário ID: ${userId}`, profileData);
     // admin.createUser não retorna uma sessão. 
     // O usuário precisará fazer login separadamente após o registro.
@@ -108,16 +124,11 @@ async function loginUser({ email, password }) {
     
     if (profileError && profileError.code !== 'PGRST116') { // PGRST116: 0 linhas (perfil não encontrado)
       console.error('Supabase getProfileForLogin error:', profileError);
-      // O login foi bem-sucedido, mas o perfil está ausente? Isso indica um problema de integridade de dados.
-      // Por agora, vamos prosseguir, mas isso deve ser investigado.
-      // Pode ser um usuário antigo sem perfil ou uma falha no processo de criação do perfil.
     }
     
-    // Combina dados do usuário Auth com dados do perfil
-    const combinedUser = { ...data.user, ...profile }; // Se o perfil for nulo, os campos do perfil não sobrescreverão nada.
-    return { ...data, user: combinedUser }; // data aqui inclui user e session
+    const combinedUser = { ...data.user, ...profile }; 
+    return { ...data, user: combinedUser }; 
   }
-  // Se data.user não existir, mesmo sem erro, é um estado inesperado.
   throw new Error('Login bem-sucedido, mas dados do usuário não retornados.');
 }
 
@@ -125,36 +136,33 @@ async function getUserById(userId) {
   console.log(`Buscando perfil para o usuário ID: ${userId} na tabela 'profiles'`);
   const { data, error } = await supabase
     .from('profiles') 
-    .select('id, name, email, photo_url, is_premium, created_at') 
+    .select('id, name, email, photo_url, is_premium, created_at, updated_at') 
     .eq('id', userId)
     .single();
 
-  if (error && error.code === 'PGRST116') { // PGRST116: 0 linhas, significa que o perfil não foi encontrado
+  if (error && error.code === 'PGRST116') { 
      console.warn(`Perfil não encontrado na tabela 'profiles' para o usuário ID: ${userId}. error code: ${error.code}`);
-     return null; // Retorna nulo explicitamente se o perfil não for encontrado
+     return null; 
   }
   if (error) {
      console.error('Supabase getUserById (profiles) error:', error);
-     throw error; // Lança outros erros
+     throw error; 
   }
   console.log(`Perfil encontrado para o usuário ID: ${userId}`, data);
   return data; 
 }
 
 async function updateUserProfile(userId, updates) {
-  // Não permitir atualização do email ou id diretamente por aqui.
-  // Email é gerenciado pelo Supabase Auth. ID é imutável.
   delete updates.email; 
   delete updates.id;    
   
-  // Adicionar 'updated_at' para ser atualizado
   updates.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
     .eq('id', userId)
-    .select('id, name, email, photo_url, is_premium, created_at, updated_at') // Incluir updated_at no select
+    .select('id, name, email, photo_url, is_premium, created_at, updated_at') 
     .single(); 
   
   if (error) {
