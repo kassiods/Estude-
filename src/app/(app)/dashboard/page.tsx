@@ -153,7 +153,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="text-center py-8 bg-card rounded-xl shadow-md">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Bem-vindo ao Study Hub!</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 font-headline">Estude +</h1>
         <p className="text-xl text-muted-foreground mb-8">Sua jornada para o sucesso acadêmico começa aqui.</p>
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleDashboardSearch}>
