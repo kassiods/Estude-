@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path'); // Import path module
@@ -22,7 +23,7 @@ const errorHandler = require('./middlewares/errorHandler');
 // const authMiddleware = require('./middlewares/authMiddleware'); // If needed globally
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002; // Alterado de 3001 para 3002
 
 // Global Middlewares
 app.use(cors()); // Habilita CORS para todas as rotas
@@ -58,3 +59,4 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`Servidor backend rodando em http://localhost:${port}`);
 });
+
