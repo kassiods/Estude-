@@ -12,6 +12,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<an
   let token: string | null = null;
   if (typeof window !== 'undefined') { // Ensure localStorage is available (client-side)
     token = localStorage.getItem('supabase_token');
+    console.log('fetchWithAuth: Token from localStorage for URL', url, ':', token); // Debugging line
+  } else {
+    console.warn('fetchWithAuth: window is undefined, cannot get token from localStorage for URL', url);
   }
 
   const headers: HeadersInit = {
@@ -21,6 +24,8 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<an
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.warn('fetchWithAuth: No token found. Request to', url, 'will be unauthenticated.');
   }
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -64,3 +69,4 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<an
 }
 
 export default fetchWithAuth;
+
