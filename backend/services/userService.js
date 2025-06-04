@@ -49,18 +49,23 @@ async function createUser({ email, password, name }) {
     if (profileError) {
       console.error(`Supabase create profile error for user ID ${userId}:`, profileError.message, profileError);
       // Tentar deletar o usuário do Auth para manter consistência
+      let detailedErrorMessage = `Falha ao criar perfil do usuário após registro. Detalhe do erro: ${profileError.message}`;
+      if (profileError.code === '23505') { // PostgreSQL unique_violation (e.g., email or id already exists in profiles)
+        detailedErrorMessage = `Falha ao criar perfil: um perfil com este email ou ID já pode existir na tabela 'profiles'. Usuário Auth ${userId} pode precisar de limpeza ou verificação manual. Detalhe Supabase: ${profileError.details || profileError.message}`;
+      }
+
       if (userId) {
-        console.warn(`Falha ao criar perfil para ${userId}. Tentando deletar usuário do Auth...`);
+        console.warn(`Falha ao criar perfil para ${userId}. Tentando deletar usuário do Auth para manter consistência...`);
         const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
         if (deleteUserError) {
           console.error(`CRÍTICO: Falha ao criar perfil E falha ao deletar usuário do Auth ${userId}:`, deleteUserError.message);
-          // Lançar um erro que indica a falha na criação do perfil e a falha na limpeza
-          throw new Error(`Falha ao criar perfil do usuário. Usuário Auth ${userId} pode precisar de limpeza manual. Erro do perfil: ${profileError.message}`);
+          detailedErrorMessage += ` Tentativa de deletar usuário Auth ${userId} também falhou: ${deleteUserError.message}. Requer intervenção manual.`;
         } else {
           console.log(`Usuário Auth ${userId} deletado com sucesso após falha na criação do perfil.`);
+          detailedErrorMessage += ` Usuário Auth ${userId} foi deletado para tentar manter a consistência.`;
         }
       }
-      throw new Error(`Falha ao criar perfil do usuário após registro: ${profileError.message}`);
+      throw new Error(detailedErrorMessage);
     }
     
     console.log(`Perfil criado com sucesso para o usuário ID: ${userId}`, profileData);
@@ -71,7 +76,7 @@ async function createUser({ email, password, name }) {
   } catch (error) {
     // Se o erro já foi tratado e lançado como uma instância de Error, relance-o
     // Caso contrário, crie um novo Error
-    console.error('Erro geral em createUser:', error.message);
+    console.error('Erro geral em createUser:', error.message, error.stack);
     if (error instanceof Error) {
       throw error;
     }
@@ -166,3 +171,4 @@ module.exports = {
   getUserById,
   updateUserProfile
 };
+
