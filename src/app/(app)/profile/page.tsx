@@ -1,32 +1,27 @@
 
 "use client";
 
-import React, { useState }
-from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, Edit3, BookMarked, BarChart3, CheckCircle, ShieldCheck } from "lucide-react";
-import Link from 'next/link';
-import Image from 'next/image';
-import { CourseCard, Course } from '@/components/courses/CourseCard'; 
+import { UserCircle, Edit3, BookMarked, BarChart3, CheckCircle, ShieldCheck, Loader2, CalendarDays } from "lucide-react";
+import { CourseCard, type Course } from '@/components/courses/CourseCard'; 
+import fetchWithAuth from '@/lib/api';
+import { useToast } from "@/hooks/use-toast";
 
-const mockUser = {
-  name: 'Kassio Estude+',
-  email: 'kassio@estude.plus',
-  photoUrl: 'https://placehold.co/150x150.png',
-  initials: 'KE',
-  isPremium: true,
-  joinDate: '15 de Janeiro de 2023',
-  overallProgress: 65, 
-  coursesCompleted: 5,
-  modulesStudied: 42,
-};
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  photo_url: string | null;
+  is_premium: boolean;
+  created_at: string; // ISO date string
+}
 
 const mockSavedCourses: Course[] = [
   { id: '1', title: 'Cálculo Avançado', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', category: 'Matemática', image: 'https://placehold.co/600x400.png', dataAiHint: 'calculus graph' },
@@ -40,37 +35,125 @@ const mockStudyHistory = [
   { course: 'Química Orgânica', status: 'Não Iniciado', date: '-' },
 ];
 
+// Mock data for stats not yet in Supabase profile
+const mockUserStats = {
+  overallProgress: 65, 
+  coursesCompleted: 5,
+  modulesStudied: 42,
+};
+const defaultPhotoUrl = 'https://placehold.co/150x150.png?text=User';
 
 export default function ProfilePage() {
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(mockUser.name);
-  const [email, setEmail] = useState(mockUser.email);
+  const [isLoadingSave, setIsLoadingSave] = useState(false);
+  
+  // Form state for editable fields
+  const [editableName, setEditableName] = useState('');
+  const [editablePhotoUrl, setEditablePhotoUrl] = useState('');
+  const [pageError, setPageError] = useState<string | null>(null); // Renamed from 'error' to avoid conflict
 
-  const handleSaveProfile = () => {
-    mockUser.name = name;
-    mockUser.email = email;
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      setIsLoading(true);
+      setPageError(null);
+      try {
+        const data = await fetchWithAuth('/api/users/me'); 
+        if (data.user) {
+          setProfile(data.user);
+          setEditableName(data.user.name || '');
+          setEditablePhotoUrl(data.user.photo_url || defaultPhotoUrl);
+        } else {
+          throw new Error(data.message || "Perfil do usuário não encontrado.");
+        }
+      } catch (err: any) {
+        console.error("Profile fetch error:", err);
+        setPageError(err.message || 'Falha ao carregar perfil.');
+        toast({ title: "Erro ao Carregar Perfil", description: err.message, variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfileData();
+  }, [toast]);
+
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    setIsLoadingSave(true);
+    setPageError(null);
+    try {
+      const updates: Partial<UserProfile> = {
+        name: editableName,
+        photo_url: editablePhotoUrl === defaultPhotoUrl ? (profile.photo_url || null) : editablePhotoUrl,
+      };
+      const data = await fetchWithAuth('/api/users/update', {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+      setProfile(data.user); 
+      setEditableName(data.user.name || '');
+      setEditablePhotoUrl(data.user.photo_url || defaultPhotoUrl);
+      toast({ title: "Perfil Atualizado", description: "Suas informações foram salvas com sucesso." });
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error("Profile save error:", err);
+      setPageError(err.message || 'Falha ao salvar perfil.');
+      toast({ title: "Erro ao Salvar", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoadingSave(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (profile) {
+      setEditableName(profile.name || '');
+      setEditablePhotoUrl(profile.photo_url || defaultPhotoUrl);
+    }
     setIsEditing(false);
+    setPageError(null); // Clear edit-specific errors
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-lg">Carregando perfil...</p>
+      </div>
+    );
+  }
+
+  if (pageError && !profile) { 
+    return <div className="text-center text-destructive py-8 text-lg">{pageError}</div>;
+  }
+  
+  if (!profile) { 
+    return <div className="text-center text-muted-foreground py-8 text-lg">Perfil não pôde ser carregado. Tente novamente.</div>;
+  }
+
+  const initials = profile.name ? profile.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() : (profile.email ? profile.email[0].toUpperCase() : 'U');
+  const joinDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric'}) : 'Data indisponível';
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl overflow-hidden">
         <div className="bg-gradient-to-r from-primary to-accent p-8 md:p-12">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={mockUser.photoUrl} alt={mockUser.name} data-ai-hint="profile picture" />
-              <AvatarFallback className="text-4xl">{mockUser.initials}</AvatarFallback>
+              <AvatarImage src={profile.photo_url || defaultPhotoUrl} alt={profile.name || 'Usuário'} data-ai-hint="profile picture user" />
+              <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
             </Avatar>
             <div className="text-center md:text-left">
-              <h1 className="text-4xl font-bold text-primary-foreground font-headline">{mockUser.name}</h1>
-              <p className="text-lg text-primary-foreground/80">{mockUser.email}</p>
-              {mockUser.isPremium && (
+              <h1 className="text-4xl font-bold text-primary-foreground font-headline">{profile.name || 'Nome não definido'}</h1>
+              <p className="text-lg text-primary-foreground/80">{profile.email || 'Email não disponível'}</p>
+              {profile.is_premium && (
                 <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-background/20 px-3 py-1 text-xs font-semibold text-primary-foreground">
                   <ShieldCheck className="h-4 w-4" /> Membro Premium
                 </span>
               )}
             </div>
-            <Button variant="outline" size="lg" className="md:ml-auto bg-background/20 text-primary-foreground hover:bg-background/30 border-primary-foreground/50" onClick={() => setIsEditing(!isEditing)}>
+            <Button variant="outline" size="lg" className="md:ml-auto bg-background/20 text-primary-foreground hover:bg-background/30 border-primary-foreground/50" onClick={() => setIsEditing(!isEditing)} disabled={isLoadingSave}>
               <Edit3 className="mr-2 h-5 w-5" /> {isEditing ? 'Cancelar Edição' : 'Editar Perfil'}
             </Button>
           </div>
@@ -80,20 +163,24 @@ export default function ProfilePage() {
           <CardContent className="p-6 bg-card">
             <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSaveProfile(); }}>
               <div>
-                <Label htmlFor="name" className="text-base">Nome Completo</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 text-base h-12" />
+                <Label htmlFor="editableName" className="text-base">Nome Completo</Label>
+                <Input id="editableName" value={editableName} onChange={(e) => setEditableName(e.target.value)} className="mt-1 text-base h-12" disabled={isLoadingSave}/>
               </div>
               <div>
-                <Label htmlFor="email" className="text-base">Endereço de Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 text-base h-12" />
+                <Label htmlFor="profileEmail" className="text-base">Endereço de Email (não editável)</Label>
+                <Input id="profileEmail" type="email" value={profile.email || ''} className="mt-1 text-base h-12 bg-muted cursor-not-allowed" disabled readOnly/>
               </div>
                <div>
-                <Label htmlFor="photoUrl" className="text-base">URL da Foto</Label>
-                <Input id="photoUrl" type="text" defaultValue={mockUser.photoUrl} className="mt-1 text-base h-12" />
+                <Label htmlFor="editablePhotoUrl" className="text-base">URL da Foto</Label>
+                <Input id="editablePhotoUrl" type="text" value={editablePhotoUrl} onChange={(e) => setEditablePhotoUrl(e.target.value)} className="mt-1 text-base h-12" disabled={isLoadingSave}/>
               </div>
+              {pageError && <p className="text-sm text-destructive">{pageError}</p>}
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="text-base px-6 py-3">Cancelar</Button>
-                <Button type="submit" className="text-base px-6 py-3 bg-primary hover:bg-primary/90">Salvar Alterações</Button>
+                <Button type="button" variant="outline" onClick={handleCancelEdit} className="text-base px-6 py-3" disabled={isLoadingSave}>Cancelar</Button>
+                <Button type="submit" className="text-base px-6 py-3 bg-primary hover:bg-primary/90" disabled={isLoadingSave}>
+                  {isLoadingSave ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Salvar Alterações
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -107,8 +194,8 @@ export default function ProfilePage() {
             <BarChart3 className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-headline">{mockUser.overallProgress}%</div>
-            <Progress value={mockUser.overallProgress} className="mt-2 h-3" />
+            <div className="text-3xl font-bold font-headline">{mockUserStats.overallProgress}%</div>
+            <Progress value={mockUserStats.overallProgress} className="mt-2 h-3" />
           </CardContent>
         </Card>
         <Card className="shadow-md">
@@ -117,16 +204,16 @@ export default function ProfilePage() {
             <CheckCircle className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-headline">{mockUser.coursesCompleted}</div>
+            <div className="text-3xl font-bold font-headline">{mockUserStats.coursesCompleted}</div>
           </CardContent>
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Módulos Estudados</CardTitle>
-            <BookMarked className="h-5 w-5 text-primary" />
+            <CardTitle className="text-sm font-medium uppercase text-muted-foreground">Data de Ingresso</CardTitle>
+            <CalendarDays className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold font-headline">{mockUser.modulesStudied}</div>
+            <div className="text-xl font-semibold font-headline">{joinDate}</div>
           </CardContent>
         </Card>
       </div>
@@ -169,7 +256,6 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
-
     </div>
   );
 }
