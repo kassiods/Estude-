@@ -11,23 +11,20 @@ datasource db {
   directUrl = env("DIRECT_URL") // Used for migrations, optional if not using Prisma Migrate directly often
 }
 
-// ----------- AUTH & USER -----------
-// Represents user profiles, linked to Supabase Auth users
 model User {
-  id                  String    @id // UUID from Supabase Auth, no @default(uuid()) here
-  email               String    @unique
-  name                String?
-  isPremium           Boolean   @default(false)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  coursesAuthored     Course[]              @relation("CourseAuthor")
-  progress            UserProgress[]
-  favorites           Favorite[]
-  chatMessages        ChatMessage[]
-  notifications       Notification[]
+  id              String    @id // Should match Supabase Auth user ID, no @default(uuid())
+  email           String    @unique
+  name            String?
+  isPremium       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  coursesAuthored Course[]  @relation("CourseAuthor")
+  progress        UserProgress[]
+  favorites       Favorite[]
+  chatMessages    ChatMessage[]
+  notifications   Notification[]
   conversationHistory ConversationHistory[]
-  adminProfile        Admin?
+  adminProfile    Admin?
 }
 
 model Admin {
@@ -39,35 +36,32 @@ model Admin {
   updatedAt    DateTime @updatedAt
 }
 
-// ----------- CORE LEARNING PLATFORM -----------
 model Course {
-  id            String        @id @default(cuid())
+  id            String    @id @default(cuid())
   title         String
-  description   String?
-  level         Level         @default(BEGINNER)
+  description   String?   @db.Text
+  level         Level     @default(BEGINNER)
   imageUrl      String?
-  dataAiHint    String?       // For AI-powered image suggestions
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  authorId      String?       // Foreign key to User
-  author        User?         @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-
+  dataAiHint    String? // For Unsplash keyword search hint
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  authorId      String?
+  author        User?     @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   modules       Module[]
   userProgress  UserProgress[]
   favorites     Favorite[]
 }
 
 model Module {
-  id           String    @id @default(cuid())
-  title        String
-  description  String?
-  order        Int       // Order of the module within the course
-  courseId     String
-  course       Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  contents     Content[]
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  order       Int       // Order of the module within the course
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  contents    Content[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   userProgress UserProgress[]
 }
 
@@ -76,13 +70,12 @@ model Content {
   title       String
   type        ContentType
   order       Int         // Order of the content within the module
-  url         String?     // For VIDEO type
-  textContent String?     // For TEXT or QUIZ (JSON for questions)
+  url         String?     // For VIDEO, PDF links
+  textContent String?     @db.Text // For TEXT, QUIZ (JSON), EXERCISE
   moduleId    String
   module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
   userProgress UserProgress[]
 }
 
@@ -92,13 +85,16 @@ model UserProgress {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  moduleId    String?  // Optional for overall course progress, or link to module directly
-  module      Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  contentId   String   // Progress is usually tied to specific content
-  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  moduleId    String   // Progress can be associated with a module overall
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  contentId   String?  // Optional: progress can be for specific content
+  content     Content? @relation(fields: [contentId], references: [id], onDelete: Cascade)
   completedAt DateTime @default(now())
+  lastAccessedAt DateTime @updatedAt
 
-  @@unique([userId, contentId]) // A user completes a content item once
+  @@unique([userId, contentId], name: "UserContentProgressUnique") // User can complete a content only once
+  // You might want a similar unique constraint for module completion if contentId is null
+  // @@unique([userId, moduleId], name: "UserModuleProgressUnique") // if applicable
 }
 
 model Favorite {
@@ -112,12 +108,11 @@ model Favorite {
   @@unique([userId, courseId])
 }
 
-// ----------- COMMUNITY & INTERACTION -----------
 model ChatMessage {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channel   String   // e.g., "general", "course-guid"
+  channel   String   // e.g., "general", "course-xyz-discussion"
   content   String   @db.Text
   createdAt DateTime @default(now())
 }
@@ -127,13 +122,12 @@ model Notification {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  message   String
-  link      String?   // Optional link for navigation
+  message   String    @db.Text
+  link      String?   // Link to relevant page, e.g., /courses/xyz
   read      Boolean   @default(false)
   createdAt DateTime  @default(now())
 }
 
-// ----------- AI & PERSONALIZATION -----------
 model ConversationHistory {
   id        String   @id @default(cuid())
   userId    String
@@ -143,8 +137,6 @@ model ConversationHistory {
   createdAt DateTime @default(now())
 }
 
-
-// ----------- ENUMS -----------
 enum Level {
   BEGINNER
   INTERMEDIATE
@@ -154,7 +146,8 @@ enum Level {
 enum ContentType {
   TEXT
   VIDEO
-  QUIZ // Could store quiz questions/answers as JSON in textContent
-  // ARTICLE // Could be another type if different from TEXT
-  // FILE // For downloadable resources
+  QUIZ
+  EXERCISE // Example: For coding exercises or text-based problems
+  PDF
+  PODCAST  // Example: If you plan to add audio content
 }
