@@ -1,185 +1,160 @@
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL") // Required for Prisma Migrate, uses connection pooling
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// Autenticação e Perfis de Usuário
-// A tabela 'users' do Supabase Auth (em auth.users) é a fonte da verdade para autenticação.
-// Esta tabela 'User' no schema public é para dados de perfil adicionais.
-// O 'id' aqui DEVE ser o mesmo UUID do auth.users.id.
-model User {
-  id          String  @id @default(uuid()) // Deve corresponder ao auth.users.id
-  email       String  @unique
-  name        String?
-  // password_hash String? // Supabase Auth lida com senhas; não armazene aqui.
-  isPremium   Boolean @default(false) @map("is_premium")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Used for migrations, optional if not using Prisma Migrate directly often
+}
 
+// ----------- AUTH & USER -----------
+// Represents user profiles, linked to Supabase Auth users
+model User {
+  id                  String    @id // UUID from Supabase Auth, no @default(uuid()) here
+  email               String    @unique
+  name                String?
+  isPremium           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  coursesAuthored     Course[]              @relation("CourseAuthor")
   progress            UserProgress[]
   favorites           Favorite[]
   chatMessages        ChatMessage[]
-  conversationHistory ConversationHistory[]
   notifications       Notification[]
+  conversationHistory ConversationHistory[]
   adminProfile        Admin?
-
-  @@map("users") // Mapeia para a tabela 'users' no schema 'public'
 }
 
-// Cursos e Conteúdo Educacional
+model Admin {
+  id           String   @id @default(cuid())
+  userId       String   @unique // Foreign key to User model
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isSuperAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ----------- CORE LEARNING PLATFORM -----------
+model Course {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  level         Level         @default(BEGINNER)
+  imageUrl      String?
+  dataAiHint    String?       // For AI-powered image suggestions
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  authorId      String?       // Foreign key to User
+  author        User?         @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  modules       Module[]
+  userProgress  UserProgress[]
+  favorites     Favorite[]
+}
+
+model Module {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  order        Int       // Order of the module within the course
+  courseId     String
+  course       Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  contents     Content[]
+  userProgress UserProgress[]
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  title       String
+  type        ContentType
+  order       Int         // Order of the content within the module
+  url         String?     // For VIDEO type
+  textContent String?     // For TEXT or QUIZ (JSON for questions)
+  moduleId    String
+  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userProgress UserProgress[]
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId    String?  // Optional for overall course progress, or link to module directly
+  module      Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  contentId   String   // Progress is usually tied to specific content
+  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, contentId]) // A user completes a content item once
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+// ----------- COMMUNITY & INTERACTION -----------
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   String   // e.g., "general", "course-guid"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  link      String?   // Optional link for navigation
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+// ----------- AI & PERSONALIZATION -----------
+model ConversationHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt    String   @db.Text
+  response  String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+
+// ----------- ENUMS -----------
 enum Level {
   BEGINNER
   INTERMEDIATE
   ADVANCED
 }
 
-model Course {
-  id          String  @id @default(cuid())
-  title       String
-  description String?
-  level       Level   @default(BEGINNER)
-  imageUrl    String? @map("image_url")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  modules         Module[]
-  userProgress    UserProgress[]
-  favorites       Favorite[]
-
-  @@map("courses")
-}
-
-model Module {
-  id          String  @id @default(cuid())
-  title       String
-  description String?
-  order       Int     // Ordem do módulo dentro do curso
-  courseId    String  @map("course_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  course          Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  contents        Content[]
-  userProgresses  UserProgress[] // Back-relation for UserProgress
-
-  @@map("modules")
-}
-
 enum ContentType {
-  VIDEO
   TEXT
-  QUIZ
-  PDF // Adicionado conforme PRD implícito
-  EXERCISE // Adicionado conforme PRD implícito
-}
-
-model Content {
-  id          String      @id @default(cuid())
-  moduleId    String      @map("module_id")
-  title       String
-  type        ContentType
-  url         String?     // Para VIDEO, PDF
-  textContent String?     @map("text_content") // Para TEXT, QUIZ, EXERCISE
-  order       Int         // Ordem do conteúdo dentro do módulo
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-
-  module       Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  userProgress UserProgress[]
-
-  @@map("contents")
-}
-
-// Progresso do Usuário
-model UserProgress {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  courseId    String   @map("course_id")
-  moduleId    String?  // Opcional se o progresso for apenas no curso geral ou conteúdo específico
-  contentId   String   // Progresso é geralmente ligado a um conteúdo específico
-  completedAt DateTime @map("completed_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  module  Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade) // Relação com Module
-  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, contentId]) // Um usuário só pode completar um conteúdo uma vez
-  @@map("user_progress")
-}
-
-// Favoritos
-model Favorite {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  courseId  String   @map("course_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, courseId])
-  @@map("favorites")
-}
-
-// Chat Comunitário
-model ChatMessage {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  channel   String   @default("general") // Canal ou tópico do chat
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("chat_messages")
-}
-
-// Histórico de Conversas com IA
-model ConversationHistory {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  prompt    String   // O que o usuário perguntou
-  response  String   // O que a IA respondeu
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("conversation_history")
-}
-
-// Notificações
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  title     String
-  message   String
-  link      String?  // Link opcional para onde a notificação leva
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-// Admin
-model Admin {
-  id           String  @id @default(cuid()) // PK da tabela Admin
-  userId       String  @unique @map("user_id") // FK para User.id
-  isSuperAdmin Boolean @default(false) @map("is_super_admin")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("admins")
+  VIDEO
+  QUIZ // Could store quiz questions/answers as JSON in textContent
+  // ARTICLE // Could be another type if different from TEXT
+  // FILE // For downloadable resources
 }
