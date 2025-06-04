@@ -46,6 +46,7 @@ export default function LoginPage() {
       if (response.ok && data.session && data.session.access_token) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('supabase_token', data.session.access_token);
+          console.log('Login Page: Token salvo no localStorage (supabase_token):', data.session.access_token); // Log adicionado
         }
         toast({
           title: "Login Bem-sucedido!",
