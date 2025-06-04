@@ -1,27 +1,23 @@
-
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
-  typescript: {
-    ignoreBuildErrors: true, // Recommended to set to false for production
-  },
-  eslint: {
-    ignoreDuringBuilds: true, // Recommended to set to false for production
-  },
+  swcMinify: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
       },
-      // Add your image storage domains here if any (e.g., Supabase Storage)
-      // {
-      //   protocol: 'https',
-      //   hostname: 'yolcllzsszjltqnkucqk.supabase.co',
-      // },
+      // You can add other image provider hostnames here if needed
     ],
   },
+  // Add other Next.js configurations here if required
+  // For example:
+  // experimental: {
+  //   typedRoutes: true,
+  // },
 };
 
 export default nextConfig;
