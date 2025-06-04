@@ -1,105 +1,144 @@
-
+// src/app/(app)/courses/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, Filter, Search, BookOpen } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowRight, Filter, Search, BookOpen, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { Progress } from '@/components/ui/progress'; // Assuming you have this component
+import { type Level } from '@prisma/client'; // Import Level enum
 
-const mockCoursesData = [
-  { id: '1', title: 'Cálculo Avançado', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', category: 'Matemática', image: 'https://placehold.co/600x400.png', dataAiHint: 'math equation' },
-  { id: '2', title: 'Química Orgânica Básica', description: 'Uma introdução à química orgânica.', modules: 10, difficulty: 'Intermediário', category: 'Ciências', image: 'https://placehold.co/600x400.png', dataAiHint: 'chemistry molecules' },
-  { id: '3', title: 'História Mundial: Civilizações Antigas', description: 'Explore o alvorecer da civilização humana.', modules: 8, difficulty: 'Iniciante', category: 'Humanidades', image: 'https://placehold.co/600x400.png', dataAiHint: 'ancient ruins' },
-  { id: '4', title: 'Python para Ciência de Dados', description: 'Aprenda programação Python para análise de dados.', modules: 15, difficulty: 'Intermediário', category: 'Programação', image: 'https://placehold.co/600x400.png', dataAiHint: 'python code' },
-  { id: '5', title: 'Introdução à Economia', description: 'Entenda os princípios econômicos básicos.', modules: 9, difficulty: 'Iniciante', category: 'Ciências Sociais', image: 'https://placehold.co/600x400.png', dataAiHint: 'stock chart' },
-  { id: '6', title: 'História da Arte Moderna', description: 'Um panorama da arte do século XIX até o presente.', modules: 11, difficulty: 'Intermediário', category: 'Artes', image: 'https://placehold.co/600x400.png', dataAiHint: 'art gallery' },
-];
+interface CourseItem {
+  id: string;
+  title: string;
+  description: string | null;
+  level: Level;
+  imageUrl: string | null;
+  modulesCount: number; // Add a count for modules
+  // userProgressPercentage?: number; // Optional: if you fetch progress summary
+}
 
-type Course = typeof mockCoursesData[0];
-
-function CourseItemCard({ course }: { course: Course }) {
+function CourseItemCard({ course }: { course: CourseItem }) {
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
-      <CardHeader className="p-0 relative">
-        <Image src={course.image} alt={course.title} width={600} height={300} className="w-full h-48 object-cover" data-ai-hint={course.dataAiHint}/>
-        <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded-md">{course.category}</div>
-      </CardHeader>
-      <CardContent className="p-6 flex-grow">
-        <CardTitle className="text-xl mb-2 font-headline">{course.title}</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground mb-4 h-20 overflow-hidden text-ellipsis">{course.description}</CardDescription>
-        <div className="text-xs text-muted-foreground">
-          <span>{course.modules} módulos</span> | <span className="capitalize">{course.difficulty}</span>
-        </div>
-      </CardContent>
-      <CardFooter className="p-6 pt-0">
-        <Link href={`/courses/${course.id}`} passHref className="w-full">
-          <Button variant="outline" className="w-full">
-            Explorar Curso <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </CardFooter>
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full group">
+      <Link href={`/courses/${course.id}`} passHref className="flex flex-col h-full">
+        <CardHeader className="p-0 relative">
+          <Image 
+            src={course.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(course.title)}`} 
+            alt={course.title} 
+            width={600} 
+            height={300} 
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform"
+            data-ai-hint="course education"
+          />
+        </CardHeader>
+        <CardContent className="p-4 md:p-6 flex-grow">
+          <CardTitle className="text-lg md:text-xl mb-1 font-headline group-hover:text-primary transition-colors">{course.title}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground mb-2 capitalize">{course.level.toLowerCase()}</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground mb-3 h-16 overflow-hidden text-ellipsis line-clamp-3">
+            {course.description || "Nenhuma descrição disponível."}
+          </CardDescription>
+          <div className="text-xs text-muted-foreground mt-auto">
+            <span>{course.modulesCount} módulos</span>
+          </div>
+          {/* {course.userProgressPercentage !== undefined && (
+            <div className="mt-2">
+              <Progress value={course.userProgressPercentage} className="h-2" />
+            </div>
+          )} */}
+        </CardContent>
+        <CardFooter className="p-4 md:p-6 pt-0">
+            <Button variant="outline" className="w-full mt-2">
+              Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        </CardFooter>
+      </Link>
     </Card>
   );
 }
 
-export default function CoursesPage() {
+function CoursesPageContent() {
   const searchParams = useSearchParams();
-  const initialSearchTerm = searchParams.get('search') || '';
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
-  const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const router = useRouter(); // For updating URL without full navigation if needed
+
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [levelFilter, setLevelFilter] = useState(searchParams.get('level') || 'all');
+  // Add other filters like category if needed
 
   useEffect(() => {
-    const urlSearch = searchParams.get('search') || '';
-    // Atualiza o estado searchTerm SOMENTE se o parâmetro da URL for diferente do estado atual.
-    // Isso evita que o useEffect sobrescreva a digitação do usuário.
-    if (urlSearch !== searchTerm) {
-      setSearchTerm(urlSearch);
-    }
-    // A dependência é apenas 'searchParams' para que o efeito rode quando a URL mudar.
-    // Não incluir 'searchTerm' aqui, pois isso causaria o problema de não conseguir apagar.
+    // Update state from URL params on initial load or param change
+    setSearchTerm(searchParams.get('search') || '');
+    setLevelFilter(searchParams.get('level') || 'all');
   }, [searchParams]);
 
+  useEffect(() => {
+    async function fetchCourses() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const queryParams = new URLSearchParams();
+        if (searchTerm) queryParams.append('search', searchTerm);
+        if (levelFilter !== 'all') queryParams.append('level', levelFilter);
+        
+        // TODO: Fetch courses from your API: /api/courses
+        // const response = await fetch(`/api/courses?${queryParams.toString()}`);
+        // if (!response.ok) {
+        //   throw new Error(`Failed to fetch courses: ${response.statusText}`);
+        // }
+        // const data = await response.json();
+        // For now, using mock data:
+        const mockData: CourseItem[] = [
+            { id: 'clxwg9z960002118z3f9qkvvb', title: 'Next.js Avançado com App Router', description: 'Domine o Next.js moderno, Server Components, e construa aplicações robustas.', level: 'ADVANCED', imageUrl: 'https://placehold.co/600x400.png?text=Next.js+Avançado', modulesCount: 5 },
+            { id: 'clxwg9z9t0006118z6z9wlvg0', title: 'Prisma ORM Essencial', description: 'Aprenda a modelar seu banco de dados e realizar queries com Prisma.', level: 'INTERMEDIATE', imageUrl: 'https://placehold.co/600x400.png?text=Prisma+Essencial', modulesCount: 3 },
+            { id: 'c3', title: 'Introdução à Programação Python', description: 'Conceitos básicos de Python para iniciantes.', level: 'BEGINNER', imageUrl: 'https://placehold.co/600x400.png?text=Python+Básico', modulesCount: 8 },
+            { id: 'c4', title: 'Algoritmos e Estruturas de Dados', description: 'Fundamentos essenciais para todo desenvolvedor.', level: 'INTERMEDIATE', imageUrl: 'https://placehold.co/600x400.png?text=Algoritmos', modulesCount: 10 },
+        ];
+        
+        // Simulate filtering based on searchTerm and levelFilter
+        let filteredMockData = mockData;
+        if (searchTerm) {
+            filteredMockData = filteredMockData.filter(course => 
+                course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+        if (levelFilter !== 'all') {
+            filteredMockData = filteredMockData.filter(course => course.level.toLowerCase() === levelFilter.toLowerCase());
+        }
+        setCourses(filteredMockData);
 
-  const normalizeText = (text: string) => {
-    return text
-      .toLowerCase()
-      .normalize("NFD") // Decomposes combined diacritical marks.
-      .replace(/[\u0300-\u036f]/g, ""); // Removes diacritical marks.
-  };
-
-  const translatedDifficulty = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case 'advanced': return 'avançado';
-      case 'intermediate': return 'intermediário';
-      case 'beginner': return 'iniciante';
-      default: return difficulty;
+      } catch (err) {
+        setError((err as Error).message);
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    fetchCourses();
+  }, [searchTerm, levelFilter]); // Refetch when filters change
+
+  const handleFilterChange = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchTerm) params.set('search', searchTerm); else params.delete('search');
+    if (levelFilter !== 'all') params.set('level', levelFilter); else params.delete('level');
+    router.push(`/courses?${params.toString()}`, { scroll: false }); // Update URL, trigger useEffect
   };
   
-  const filteredCourses = mockCoursesData.filter(course => {
-    const normalizedSearchTerm = normalizeText(searchTerm);
-    const normalizedCourseTitle = normalizeText(course.title);
-    return (
-      normalizedCourseTitle.includes(normalizedSearchTerm) &&
-      (difficultyFilter === 'all' || course.difficulty.toLowerCase() === difficultyFilter) &&
-      (categoryFilter === 'all' || course.category === categoryFilter)
-    );
-  });
-
-  const categories = ['all', ...new Set(mockCoursesData.map(c => c.category))];
-  const difficulties = ['all', 'iniciante', 'intermediário', 'avançado'];
-  const displayDifficulties = {
-    'all': 'Todas as Dificuldades',
-    'iniciante': 'Iniciante',
-    'intermediário': 'Intermediário',
-    'avançado': 'Avançado'
-  };
+  const levels: { value: string, label: string }[] = [
+    { value: 'all', label: 'Todos os Níveis' },
+    { value: 'BEGINNER', label: 'Iniciante' },
+    { value: 'INTERMEDIATE', label: 'Intermediário' },
+    { value: 'ADVANCED', label: 'Avançado' },
+  ];
 
 
   return (
@@ -116,58 +155,72 @@ export default function CoursesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar cursos..."
+              placeholder="Buscar por título ou descrição..."
               className="w-full rounded-lg pl-10 h-12 text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleFilterChange()}
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div>
-              <label htmlFor="category-filter" className="block text-sm font-medium text-muted-foreground mb-1">Categoria</label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger id="category-filter" className="h-12 text-base">
-                  <SelectValue placeholder="Filtrar por categoria" />
+              <label htmlFor="level-filter" className="block text-sm font-medium text-muted-foreground mb-1">Nível</label>
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger id="level-filter" className="h-12 text-base">
+                  <SelectValue placeholder="Filtrar por nível" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat} value={cat} className="capitalize text-base">{cat === 'all' ? 'Todas as Categorias' : cat}</SelectItem>
+                  {levels.map(lvl => (
+                    <SelectItem key={lvl.value} value={lvl.value} className="capitalize text-base">{lvl.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label htmlFor="difficulty-filter" className="block text-sm font-medium text-muted-foreground mb-1">Dificuldade</label>
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                <SelectTrigger id="difficulty-filter" className="h-12 text-base">
-                  <SelectValue placeholder="Filtrar por dificuldade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {difficulties.map(diffKey => (
-                    <SelectItem key={diffKey} value={diffKey} className="capitalize text-base">
-                      {displayDifficulties[diffKey as keyof typeof displayDifficulties]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline" className="md:self-end h-12 text-base">
-              <Filter className="mr-2 h-5 w-5" /> Aplicar Filtros
+            <Button onClick={handleFilterChange} className="w-full md:w-auto h-12 text-base" disabled={isLoading}>
+              <Filter className="mr-2 h-5 w-5" /> 
+              {isLoading ? <Loader2 className="animate-spin"/> : "Aplicar Filtros"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map(course => <CourseItemCard key={course.id} course={{...course, difficulty: translatedDifficulty(course.difficulty)}} />)}
+      {isLoading && (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="ml-4 text-lg text-muted-foreground">Carregando cursos...</p>
         </div>
-      ) : (
+      )}
+      {error && (
+         <Card className="bg-destructive/10 border-destructive">
+            <CardContent className="p-6 text-center text-destructive">
+                <p>Erro ao carregar cursos: {error}</p>
+            </CardContent>
+         </Card>
+      )}
+      {!isLoading && !error && courses.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map(course => <CourseItemCard key={course.id} course={course} />)}
+        </div>
+      )}
+      {!isLoading && !error && courses.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-xl text-muted-foreground">Nenhum curso encontrado com seus critérios.</p>
-          {initialSearchTerm && <p className="text-md text-muted-foreground mt-2">Termo buscado: "{initialSearchTerm}"</p>}
+          <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+          <p className="text-xl text-muted-foreground">Nenhum curso encontrado.</p>
+          <p className="text-sm text-muted-foreground mt-1">Tente ajustar seus filtros ou buscar por outro termo.</p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function CoursesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <CoursesPageContent />
+    </Suspense>
   );
 }

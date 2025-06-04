@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Used for Prisma Migrate, separate from connection pooling
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ContentType {
+  VIDEO
+  TEXT
+  QUIZ
+  DOCUMENT // Added for PDF or other docs
+  LINK // External link
+}
+
+// Corresponds to Supabase Auth users
+// Prisma does NOT manage user creation/auth, Supabase does.
+// This table stores additional profile information linked to auth.users.id.
+model User {
+  id          String   @id @default(uuid()) // Matches Supabase auth.users.id (UUID)
+  email       String   @unique
+  name        String?
+  passwordHash String?  // Not directly used for auth if Supabase handles it, but can be here for reference or other systems
+  isPremium   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  progress             UserProgress[]
+  favorites            Favorite[]
+  chatMessages         ChatMessage[]
+  conversationHistory  ConversationHistory[]
+  notifications        Notification[]
+  adminProfile         Admin? // Link to Admin profile if the user is an admin
+
+  @@map("profiles") // Explicitly map to the 'profiles' table in Supabase
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  level       Level    @default(BEGINNER)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules   Module[]
+  progress  UserProgress[]
+  favorites Favorite[]
+}
+
+model Module {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  order       Int // Order of the module within the course
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  contents    Content[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userProgresses UserProgress[] // Back-relation for UserProgress
+}
+
+model Content {
+  id          String      @id @default(cuid())
+  moduleId    String
+  module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title       String
+  type        ContentType
+  url         String?     // For VIDEO, DOCUMENT (PDF link), LINK
+  textContent String?     @db.Text // For TEXT, QUIZ (quiz data as JSON string or markdown)
+  order       Int         // Order of content within the module
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userProgress UserProgress[]
+}
+
+model UserProgress {
+  id          String   @id @default(cuid())
+  userId      String   // Corresponds to User.id (which is auth.users.id)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId    String? // Optional for overall course progress, or link to module directly
+  module      Module?  @relation(fields: [moduleId], references: [id], onDelete:Cascade)
+  contentId   String   // Progress is usually tied to specific content
+  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  completedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, contentId]) // A user can complete a piece of content only once
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+}
+
+// For community chat
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   String   @default("general") // Default channel, can be course-specific later e.g. "course-{courseId}"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// For AI Study Assistant history
+model ConversationHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt    String   @db.Text
+  response  String   @db.Text // Could be JSON if structured AI responses are stored
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String   @db.Text
+  link      String?  // Link to relevant page, e.g., /courses/course-id
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id           String   @id @default(uuid()) // Matches User.id
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String   @unique // Foreign key to User table
+  isSuperAdmin Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
