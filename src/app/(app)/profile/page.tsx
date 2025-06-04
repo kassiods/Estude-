@@ -11,7 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCircle, Edit3, BookMarked, BarChart3, CheckCircle, ShieldCheck, Loader2, CalendarDays } from "lucide-react";
 import { CourseCard, type Course } from '@/components/courses/CourseCard'; 
-import fetchWithAuth from '@/lib/api';
 import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
@@ -23,22 +22,29 @@ interface UserProfile {
   created_at: string; // ISO date string
 }
 
+const mockUserProfile: UserProfile = {
+  id: 'mockUser123',
+  name: 'Usuário de Demonstração',
+  email: 'demo@studyhub.com',
+  photo_url: 'https://placehold.co/150x150.png?text=Demo',
+  is_premium: true,
+  created_at: new Date().toISOString(),
+};
+
 const mockSavedCourses: Course[] = [
-  { id: '1', title: 'Cálculo Avançado', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', category: 'Matemática', image: 'https://placehold.co/600x400.png', dataAiHint: 'calculus graph' },
-  { id: '4', title: 'Python para Ciência de Dados', description: 'Aprenda programação Python para análise de dados.', modules: 15, difficulty: 'Intermediário', category: 'Programação', image: 'https://placehold.co/600x400.png', dataAiHint: 'data visualization' },
+  { id: '1', title: 'Cálculo Avançado (Mock)', description: 'Domine os fundamentos do cálculo avançado.', modules: 12, difficulty: 'Avançado', category: 'Matemática', image: 'https://placehold.co/600x400.png', dataAiHint: 'calculus graph' },
+  { id: '4', title: 'Python para Ciência de Dados (Mock)', description: 'Aprenda programação Python para análise de dados.', modules: 15, difficulty: 'Intermediário', category: 'Programação', image: 'https://placehold.co/600x400.png', dataAiHint: 'data visualization' },
 ];
 
 const mockStudyHistory = [
-  { course: 'Introdução à Álgebra', status: 'Concluído', date: '20/05/2023' },
-  { course: 'Fundamentos de Física', status: 'Concluído', date: '10/08/2023' },
-  { course: 'Cálculo I', status: 'Em Progresso (70%)', date: 'Em andamento' },
-  { course: 'Química Orgânica', status: 'Não Iniciado', date: '-' },
+  { course: 'Introdução à Álgebra (Mock)', status: 'Concluído', date: '20/05/2023' },
+  { course: 'Fundamentos de Física (Mock)', status: 'Concluído', date: '10/08/2023' },
+  { course: 'Cálculo I (Mock)', status: 'Em Progresso (70%)', date: 'Em andamento' },
 ];
 
-// Mock data for stats not yet in Supabase profile
 const mockUserStats = {
   overallProgress: 65, 
-  coursesCompleted: 5,
+  coursesCompleted: 2, // Ajustado para corresponder ao mockStudyHistory
   modulesStudied: 42,
 };
 const defaultPhotoUrl = 'https://placehold.co/150x150.png?text=User';
@@ -50,60 +56,36 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoadingSave, setIsLoadingSave] = useState(false);
   
-  // Form state for editable fields
   const [editableName, setEditableName] = useState('');
   const [editablePhotoUrl, setEditablePhotoUrl] = useState('');
-  const [pageError, setPageError] = useState<string | null>(null); // Renamed from 'error' to avoid conflict
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      setIsLoading(true);
-      setPageError(null);
-      try {
-        const data = await fetchWithAuth('/api/users/me'); 
-        if (data.user) {
-          setProfile(data.user);
-          setEditableName(data.user.name || '');
-          setEditablePhotoUrl(data.user.photo_url || defaultPhotoUrl);
-        } else {
-          throw new Error(data.message || "Perfil do usuário não encontrado.");
-        }
-      } catch (err: any) {
-        console.error("Profile fetch error:", err);
-        setPageError(err.message || 'Falha ao carregar perfil.');
-        toast({ title: "Erro ao Carregar Perfil", description: err.message, variant: "destructive" });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProfileData();
-  }, [toast]);
+    setIsLoading(true);
+    // Simula o carregamento de dados do perfil
+    setTimeout(() => {
+      setProfile(mockUserProfile);
+      setEditableName(mockUserProfile.name || '');
+      setEditablePhotoUrl(mockUserProfile.photo_url || defaultPhotoUrl);
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!profile) return;
     setIsLoadingSave(true);
-    setPageError(null);
-    try {
-      const updates: Partial<UserProfile> = {
-        name: editableName,
-        photo_url: editablePhotoUrl === defaultPhotoUrl ? (profile.photo_url || null) : editablePhotoUrl,
-      };
-      const data = await fetchWithAuth('/api/users/update', {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      });
-      setProfile(data.user); 
-      setEditableName(data.user.name || '');
-      setEditablePhotoUrl(data.user.photo_url || defaultPhotoUrl);
-      toast({ title: "Perfil Atualizado", description: "Suas informações foram salvas com sucesso." });
-      setIsEditing(false);
-    } catch (err: any) {
-      console.error("Profile save error:", err);
-      setPageError(err.message || 'Falha ao salvar perfil.');
-      toast({ title: "Erro ao Salvar", description: err.message, variant: "destructive" });
-    } finally {
-      setIsLoadingSave(false);
-    }
+    
+    // Simula o salvamento dos dados
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setProfile(prevProfile => ({
+      ...(prevProfile as UserProfile),
+      name: editableName,
+      photo_url: editablePhotoUrl,
+    }));
+    
+    toast({ title: "Perfil (Mock) Atualizado", description: "Suas informações foram atualizadas localmente (sem backend)." });
+    setIsEditing(false);
+    setIsLoadingSave(false);
   };
 
   const handleCancelEdit = () => {
@@ -112,7 +94,6 @@ export default function ProfilePage() {
       setEditablePhotoUrl(profile.photo_url || defaultPhotoUrl);
     }
     setIsEditing(false);
-    setPageError(null); // Clear edit-specific errors
   };
   
   if (isLoading) {
@@ -123,13 +104,9 @@ export default function ProfilePage() {
       </div>
     );
   }
-
-  if (pageError && !profile) { 
-    return <div className="text-center text-destructive py-8 text-lg">{pageError}</div>;
-  }
   
   if (!profile) { 
-    return <div className="text-center text-muted-foreground py-8 text-lg">Perfil não pôde ser carregado. Tente novamente.</div>;
+    return <div className="text-center text-muted-foreground py-8 text-lg">Perfil não pôde ser carregado (mock).</div>;
   }
 
   const initials = profile.name ? profile.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() : (profile.email ? profile.email[0].toUpperCase() : 'U');
@@ -174,7 +151,6 @@ export default function ProfilePage() {
                 <Label htmlFor="editablePhotoUrl" className="text-base">URL da Foto</Label>
                 <Input id="editablePhotoUrl" type="text" value={editablePhotoUrl} onChange={(e) => setEditablePhotoUrl(e.target.value)} className="mt-1 text-base h-12" disabled={isLoadingSave}/>
               </div>
-              {pageError && <p className="text-sm text-destructive">{pageError}</p>}
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={handleCancelEdit} className="text-base px-6 py-3" disabled={isLoadingSave}>Cancelar</Button>
                 <Button type="submit" className="text-base px-6 py-3 bg-primary hover:bg-primary/90" disabled={isLoadingSave}>

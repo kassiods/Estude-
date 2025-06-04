@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookHeart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-// Removed fetchWithAuth import as login doesn't need existing token
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,47 +28,19 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      if (!backendUrl) {
-        throw new Error("Backend URL não configurada.");
-      }
-      
-      const response = await fetch(`${backendUrl}/api/users/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-      });
+    // Simula uma tentativa de login
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const data = await response.json();
-
-      if (response.ok && data.session && data.session.access_token) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('supabase_token', data.session.access_token);
-          console.log('Login Page: Token salvo no localStorage (supabase_token):', data.session.access_token); // Log adicionado
-        }
-        toast({
-          title: "Login Bem-sucedido!",
-          description: "Você será redirecionado para o painel.",
-        });
-        router.push("/dashboard");
-      } else {
-        toast({
-          title: "Falha no Login",
-          description: data.error || data.message || "Verifique suas credenciais.",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      console.error("Login error:", error);
-      toast({
-        title: "Erro ao Tentar Login",
-        description: error.message || "Ocorreu um problema de conexão ou com o servidor.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Demonstração",
+      description: "Login não conectado a um backend. Redirecionando para o painel para fins de demonstração.",
+    });
+    
+    // Em uma app real sem backend, você não salvaria um token ou poderia usar um mock.
+    // Para manter o fluxo da UI, vamos redirecionar.
+    router.push("/dashboard");
+    
+    setIsLoading(false);
   };
 
   return (
@@ -103,7 +74,7 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
                 <Link
-                  href="#" // TODO: Implementar página de esqueceu a senha
+                  href="#"
                   className="text-sm text-primary hover:underline"
                 >
                   Esqueceu a senha?

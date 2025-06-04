@@ -29,49 +29,19 @@ export default function RegisterPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-    // Log the URL being used for the fetch request
-    console.log(`Attempting to register user. Backend API endpoint: ${backendUrl}/api/users/register`);
+    // Simula uma tentativa de registro
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    try {
-      const response = await fetch(`${backendUrl}/api/users/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Conta Criada!",
-          description: data.message || "Sua conta foi criada com sucesso. Verifique seu email para confirmação, se necessário.",
-          variant: "default",
-        });
-        // Optionally redirect or clear form
-        // router.push("/login");
-        setName('');
-        setEmail('');
-        setPassword('');
-      } else {
-        toast({
-          title: "Erro ao Criar Conta",
-          description: data.error || data.message || "Não foi possível criar sua conta. Tente novamente.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error(`Registration error: Failed to fetch from ${backendUrl}/api/users/register`, error);
-      toast({
-        title: "Erro de Rede",
-        description: `Não foi possível conectar ao servidor em ${backendUrl}. Verifique sua conexão, se o servidor backend está em execução e se a URL no arquivo .env (NEXT_PUBLIC_BACKEND_URL) está correta e acessível.`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Demonstração",
+      description: "Cadastro não conectado a um backend. Para fins de demonstração, você pode prosseguir para o login.",
+    });
+    
+    setName('');
+    setEmail('');
+    setPassword('');
+    setIsLoading(false);
+    // router.push("/login"); // Opcional: redirecionar para login
   };
 
   return (
