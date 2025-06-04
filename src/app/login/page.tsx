@@ -1,3 +1,4 @@
+
 // src/app/login/page.tsx
 "use client";
 
@@ -32,7 +33,8 @@ export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    setIsMounted(true);
+    setIsMounted(true); // Ensure component is mounted before running session checks
+
     const redirectedFrom = searchParams.get('redirectedFrom');
     if (redirectedFrom) {
       toast({
@@ -41,14 +43,17 @@ export default function LoginPage() {
         variant: "default",
       });
     }
-     // Check for session on mount, if user is already logged in, redirect
+    
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && isMounted) {
+      if (session && isMounted) { // Check isMounted here too
         router.replace('/dashboard');
       }
     };
-    checkSession();
+
+    if (isMounted) { // Only run checkSession if component is truly mounted
+        checkSession();
+    }
 
   }, [searchParams, toast, supabase, router, isMounted]);
 
@@ -80,11 +85,9 @@ export default function LoginPage() {
         title: "Login Bem-sucedido!",
         description: "Redirecionando para o painel...",
       });
-      // router.push will preserve history, replace will not.
-      // If user came from a protected route, middleware should handle redirect after session is set.
-      // Otherwise, go to dashboard.
       const nextUrl = searchParams.get('next') || '/dashboard';
-      router.replace(nextUrl);
+      console.log("Login successful, redirecting to:", nextUrl); // Added log
+      router.replace(nextUrl); // Reverted to router.replace
     }
   };
 
@@ -101,7 +104,7 @@ export default function LoginPage() {
     const { error: magicLinkError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // emailRedirectTo: `${window.location.origin}/api/auth/callback`, // Handled by Supabase settings
+        // emailRedirectTo: `${window.location.origin}/api/auth/callback`, 
       },
     });
     setIsLoading(false);
@@ -116,14 +119,13 @@ export default function LoginPage() {
     }
   };
   
-  // Add OAuth login handler (e.g., Google)
-  const handleOAuthLogin = async (provider: 'google' | 'github') => { // Add more providers as needed
+  const handleOAuthLogin = async (provider: 'google' | 'github') => { 
     setIsLoading(true);
     setError(null);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        // redirectTo: `${window.location.origin}/api/auth/callback`, // Handled by Supabase settings
+        // redirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
     setIsLoading(false);
@@ -186,7 +188,7 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
                 <Link
-                  href="/forgot-password" // TODO: Create this page
+                  href="/forgot-password" 
                   className="text-sm text-primary hover:underline"
                 >
                   Esqueceu a senha?

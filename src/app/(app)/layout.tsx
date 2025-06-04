@@ -92,51 +92,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = useCallback(async (userId: string, userEmail?: string) => {
     try {
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-         
+      const { data: { user: authUser } } = await supabase.auth.getUser(); // Re-fetch auth user for fresh metadata
+      if (authUser) {
         const { data: profileData, error: profileError } = await supabase
-          .from('users') // Nome da sua tabela de perfis no Prisma
+          .from('users') 
           .select('name, email, photo_url, isPremium')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .single();
 
-        if (profileError && profileError.code !== 'PGRST116') { // PGRST116: row not found
+        if (profileError && profileError.code !== 'PGRST116') { 
           throw profileError;
         }
         
-        const name = profileData?.name || user.user_metadata?.name || user.email?.split('@')[0] || "Usuário";
-        const avatarUrl = profileData?.photo_url || user.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(name || "U")[0].toUpperCase()}`;
+        const name = profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || "Usuário";
+        const avatarUrl = profileData?.photo_url || authUser.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(name || "U")[0].toUpperCase()}`;
 
         setUserDisplay({
             name: name,
-            email: profileData?.email || user.email,
+            email: profileData?.email || authUser.email,
             avatarUrl: avatarUrl,
-            initials: (name || user.email || 'U').substring(0,2).toUpperCase(),
-            isPremium: profileData?.isPremium || false,
+            initials: (name || authUser.email || 'U').substring(0,2).toUpperCase(),
+            isPremium: profileData?.isPremium || authUser.user_metadata?.is_premium || false,
         });
       } else {
-        router.replace('/login'); 
+        setUserDisplay(null); // Should not happen if session.user was valid when calling
       }
-
     } catch (error) {
       console.error("Error fetching user profile:", error);
       toast({ title: "Erro ao carregar perfil", description: (error as Error).message, variant: "destructive"});
+      setUserDisplay(null); // Ensure userDisplay is cleared on error
     } finally {
-      setIsLoadingUser(false);
+      setIsLoadingUser(false); // Critical: set loading to false after operation
     }
-  }, [supabase, router, toast]); // Adicionado toast às dependências
+  }, [supabase, toast]); // router removed as it's not directly used inside, but pathname change triggers useEffect
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setIsLoadingUser(true);
+        setIsLoadingUser(true); 
         if (session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email);
+          await fetchUserProfile(session.user.id, session.user.email); 
         } else {
           setUserDisplay(null);
-          setIsLoadingUser(false);
+          setIsLoadingUser(false); 
           if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
             router.replace('/login');
           }
@@ -144,22 +142,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     );
     
-     supabase.auth.getSession().then(({ data: { session }}) => {
+    setIsLoadingUser(true); 
+    supabase.auth.getSession().then(async ({ data: { session }}) => {
         if (session?.user) {
-          fetchUserProfile(session.user.id, session.user.email);
+          await fetchUserProfile(session.user.id, session.user.email); 
         } else {
-            setIsLoadingUser(false);
+            setUserDisplay(null); 
+            setIsLoadingUser(false); 
             if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
                  router.replace('/login');
             }
         }
     });
 
-
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, [supabase, fetchUserProfile, router, pathname]);
+
 
   const handleLogout = async () => {
     setIsLoadingUser(true);
@@ -167,13 +167,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error signing out:", error);
       toast({ title: "Erro ao Sair", description: error.message, variant: "destructive" });
+      setIsLoadingUser(false); // Ensure loading is false even on error
     } else {
       setUserDisplay(null);
       toast({ title: "Logout Efetuado", description: "Você foi desconectado." });
+      // isLoadingUser will be set to false by onAuthStateChange -> else block
       router.replace('/login'); 
     }
     setIsSidebarOpen(false);
-    setIsLoadingUser(false);
   };
   
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -228,7 +229,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
   
-  if (isLoadingUser && !userDisplay) {
+  if (isLoadingUser) { // Show loader if actively checking auth state or fetching profile
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -236,16 +237,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
- 
-  if (!userDisplay && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/api/auth')) {
-     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p>Redirecionando para o login...</p>
-        <Loader2 className="ml-2 h-8 w-8 animate-spin text-primary" />
-      </div>
+  // If not loading and no user, and on a protected page, useEffect will handle redirect.
+  // Children should only render if user is loaded or if on a public page (which this layout doesn't cover)
+  // This layout is for (app) group, which is protected.
+  // If !isLoadingUser && !userDisplay, the useEffect has already redirected to /login if on a protected page.
+  // If execution reaches here, and userDisplay is null, it means useEffect has run, determined no user,
+  // and if pathname was /login or /register, it wouldn't redirect.
+  // This is to prevent rendering children if user is not logged in and is on a protected route.
+  // The middleware should ideally handle the primary redirect for direct access to protected routes.
+  // This client-side check is a fallback.
+  if (!userDisplay && pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
+    // This case should ideally not be hit often if middleware and useEffect are correct,
+    // but it's a final check before rendering children on a protected route without a user.
+    // console.warn("AppLayout: Rendering protection fallback. No userDisplay on protected route. Pathname:", pathname);
+    return (
+         <div className="flex min-h-screen items-center justify-center bg-background">
+            <p>Verificando sessão...</p>
+            <Loader2 className="ml-2 h-8 w-8 animate-spin text-primary" />
+        </div>
     );
   }
-
 
   return (
       <div className="grid min-h-screen w-full md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
@@ -333,7 +344,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">
-            {children}
+            {/* Render children only if user is loaded and present, or if it's a public page this layout might accidentally wrap */}
+            {/* The main protection is !isLoadingUser && userDisplay. If these are false, it means either loading or no user */}
+             {(userDisplay || pathname.startsWith('/login') || pathname.startsWith('/register') ) && children}
           </main>
         </div>
       </div>
