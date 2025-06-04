@@ -2,60 +2,64 @@
 const supabase = require('../supabase');
 
 async function createUser({ email, password, name }) {
-  // 1. Sign up the user with Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // 1. Create the user with Supabase Auth using admin privileges
+  // This is preferred for server-side user creation.
+  const { data: authAdminData, error: authAdminError } = await supabase.auth.admin.createUser({
     email,
     password,
-    options: {
-      // Optional: Store name in user_metadata, also in profiles table for easier access
-      data: {
-        name,
-      },
-    },
+    user_metadata: { name: name }, // Store name in user_metadata as well
+    email_confirm: false, // Set to true if you want email confirmation. For now, auto-confirm.
   });
 
-  if (authError) {
-    console.error('Supabase signUp error:', authError);
-    throw authError;
+  if (authAdminError) {
+    console.error('Supabase admin.createUser error:', authAdminError);
+    // More specific error messages can be returned to the client if needed
+    if (authAdminError.message.includes('unique constraint')) {
+        throw new Error('Um usuário com este email já existe.');
+    }
+    if (authAdminError.message.includes('Password should be at least 6 characters')) {
+        throw new Error('A senha deve ter pelo menos 6 caracteres.');
+    }
+    throw authAdminError;
   }
 
   // Ensure user object and ID are available
-  if (!authData.user || !authData.user.id) {
-    // This case might happen if email confirmation is enabled and the user object isn't immediately populated with full details.
-    // However, authData.user.id should typically be available.
-     console.error('User object or ID not available after sign up.');
-    throw new Error('Falha ao obter ID do usuário após o registro.');
+  if (!authAdminData.user || !authAdminData.user.id) {
+    console.error('User object or ID not available after admin.createUser.');
+    throw new Error('Falha ao obter ID do usuário após o registro via admin.');
   }
   
-  const userId = authData.user.id;
+  const userId = authAdminData.user.id;
 
   // 2. Create a profile for the user in the 'profiles' table
-  // Make sure your 'profiles' table has RLS policies that allow signed-up users to insert their own profile,
-  // or use the service_role key for this operation if done server-side securely.
-  // For this server-side code, Supabase client initialized with service_role key can bypass RLS.
-  // If using anon key, RLS must allow this.
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .insert([{ 
-        id: userId, // Link to the auth.users table
-        name: name, 
-        email: email, // Store email here too for easier querying on profiles
-        photo_url: null, // Set a default or leave null
-        is_premium: false, // Default value
+        id: userId,         // Link to the auth.users table
+        name: name,         // Use the name passed to the function
+        email: email,       // Use the email passed to the function (same as authAdminData.user.email)
+        photo_url: null,    // Set a default or leave null
+        is_premium: false,  // Default value
      }])
     .select()
     .single();
 
   if (profileError) {
     console.error('Supabase create profile error:', profileError);
-    // If profile creation fails, you might want to clean up the auth user,
-    // but this adds complexity. For now, we'll throw.
-    // Check RLS policies on 'profiles' table.
+    // If profile creation fails, you might want to clean up the auth user created by admin.createUser.
+    // This adds complexity (e.g., await supabase.auth.admin.deleteUser(userId)).
+    // For now, we'll throw, which will result in a 400 or 500 error from the controller.
+    // Check RLS policies on 'profiles' table if not using service_role or if it still fails.
+    // However, service_role should bypass RLS.
+    // Also check table constraints.
     throw profileError; 
   }
   
-  // Return authData (which includes user and session) and the created profile
-  return { user: authData.user, session: authData.session, profile: profileData };
+  // admin.createUser does not return a session. 
+  // The user will need to log in separately after registration.
+  // This is a common pattern for server-side registration.
+  // We return the created auth user and the profile. Session will be null.
+  return { user: authAdminData.user, session: null, profile: profileData };
 }
 
 async function loginUser({ email, password }) {
@@ -68,8 +72,7 @@ async function loginUser({ email, password }) {
     console.error('Supabase loginUser error:', error);
     throw error;
   }
-  // data contains user and session
-  // Fetch profile data as well to return a complete user object
+
   if (data.user) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -77,17 +80,16 @@ async function loginUser({ email, password }) {
       .eq('id', data.user.id)
       .single();
     
-    if (profileError && profileError.code !== 'PGRST116') { // PGRST116: 0 rows, which is an issue here
+    if (profileError && profileError.code !== 'PGRST116') { 
       console.error('Supabase getProfileForLogin error:', profileError);
-      // Decide how to handle - login successful but profile missing?
+      // Login successful but profile missing? This shouldn't happen if registration works.
+      // For now, we proceed, but this indicates a data integrity issue.
     }
-    // Combine auth user with profile data
-    // Ensure that the structure returned is consistent, e.g. profile data nested or merged.
-    // Merging profile into data.user for convenience:
+    
     const combinedUser = { ...data.user, ...profile };
     return { ...data, user: combinedUser };
   }
-  return data;
+  return data; // Should ideally always have data.user if login is successful
 }
 
 async function getUserById(userId) {
@@ -97,24 +99,27 @@ async function getUserById(userId) {
     .eq('id', userId)
     .single();
 
-  if (error && error.code !== 'PGRST116') { // PGRST116: 0 rows, means profile not found
+  if (error && error.code === 'PGRST116') { // PGRST116: 0 rows, means profile not found
+     console.warn(`Profile not found for user ID: ${userId}`);
+     return null; // Return null explicitly if profile not found
+  }
+  if (error) {
      console.error('Supabase getUserById error:', error);
      throw error;
   }
-  return data; // data will be null if not found and PGRST116
+  return data; 
 }
 
 async function updateUserProfile(userId, updates) {
-  // Ensure 'email' or 'id' are not in updates if they shouldn't be changed here
-  delete updates.email;
-  delete updates.id;
+  delete updates.email; // Email should not be updated via this profile update
+  delete updates.id;    // ID should not be updated
   
   const { data, error } = await supabase
     .from('profiles')
     .update(updates)
     .eq('id', userId)
-    .select('id, name, email, photo_url, is_premium, created_at') // Select the updated row
-    .single(); // Expecting a single row to be updated and returned
+    .select('id, name, email, photo_url, is_premium, created_at')
+    .single(); 
   
   if (error) {
     console.error('Supabase updateUserProfile error:', error);
