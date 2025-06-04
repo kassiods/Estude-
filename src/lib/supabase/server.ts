@@ -1,16 +1,20 @@
+
 // src/lib/supabase/server.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js'; // For admin client
 
-export function createSupabaseServerClient(isAdmin: boolean = false) {
+export function createSupabaseServerClient(isAdminContext: boolean = false) {
   const cookieStore = cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = isAdmin 
+  // Use service role key if isAdminContext is true, otherwise use anon key
+  const supabaseKey = isAdminContext 
     ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
     : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase URL or Key in environment variables for server.');
+    const keyName = isAdminContext ? 'Service Role Key' : 'Anon Key';
+    throw new Error(`Missing Supabase URL or ${keyName} in environment variables for server-side Supabase client.`);
   }
 
   return createServerClient(supabaseUrl, supabaseKey, {
@@ -23,8 +27,7 @@ export function createSupabaseServerClient(isAdmin: boolean = false) {
           cookieStore.set({ name, value, ...options });
         } catch (error) {
           // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+          // This can be ignored if you have middleware refreshing user sessions.
         }
       },
       remove(name: string, options: CookieOptions) {
@@ -32,31 +35,22 @@ export function createSupabaseServerClient(isAdmin: boolean = false) {
           cookieStore.set({ name, value: '', ...options });
         } catch (error) {
           // The `delete` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+          // This can be ignored if you have middleware refreshing user sessions.
         }
       },
     },
   });
 }
 
-// Specific client for admin operations using service role key
-export function createSupabaseAdmin() {
+// Specific client for admin operations using service role key, without cookie context
+// Useful for scripts, cron jobs, or specific backend tasks not tied to a user session.
+export function createSupabaseAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing Supabase URL or Service Role Key for admin client.');
   }
-
-  // For admin client, we don't typically need cookie handling from next/headers
-  // as it's used in server-side scripts or specific admin API routes
-  // that might not have a user cookie context or don't need to set one.
+  // This client does not interact with cookies, it uses the service_role key directly.
   return createClient(supabaseUrl, supabaseServiceKey);
 }
-
-// Re-export createClient from supabase-js for direct use if needed.
-// Avoid this for server components or API routes that need cookie handling for user sessions.
-import { createClient } from '@supabase/supabase-js';
-export { createClient as createSupabaseClientRaw } from '@supabase/supabase-js';
-

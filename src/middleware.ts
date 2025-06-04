@@ -1,33 +1,15 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Supabase URL or Anon Key not defined for middleware.');
-    // Potentially redirect to an error page or allow access if misconfigured for public routes
-    return response;
-  }
-  
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value;
-      },
-      set(name: string, value: string, options) {
-        request.cookies.set({ name, value, ...options }); // Update request cookies
-        response.cookies.set({ name, value, ...options }); // Update response cookies
-      },
-      remove(name: string, options) {
-        request.cookies.set({ name, value: '', ...options }); // Update request cookies
-        response.cookies.set({ name, value: '', ...options }); // Update response cookies
-      },
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
     },
   });
+
+  const supabase = createSupabaseServerClient(); // Uses anon key by default
 
   const {
     data: { session },
@@ -35,29 +17,31 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Define protected routes (app/* excluding auth pages and public API routes)
-  const isProtectedRoute = pathname.startsWith('/app') && 
-                           !pathname.startsWith('/app/api/auth'); // Exclude auth API routes from this check
+  // Define protected routes (app/* excluding auth pages and specific public API routes)
+  const isAppRoute = pathname.startsWith('/app');
+  const isAuthApiRoute = pathname.startsWith('/api/auth'); // e.g. /api/auth/callback
+  const isPublicApiRoute = pathname.startsWith('/api/courses') && request.method === 'GET'; // Example: Publicly list courses
 
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isProtectedRoute = isAppRoute && !isAuthApiRoute && !pathname.startsWith('/api/users/me'); 
+                          // `/api/users/me` handles its own auth check but needs to be accessible to try
+
+  const isAuthPageRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
   
   if (isProtectedRoute && !session) {
-    // User is not authenticated and trying to access a protected route
+    // User is not authenticated and trying to access a protected app route
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set('redirectedFrom', pathname);
+    redirectUrl.searchParams.set('redirectedFrom', pathname); // Optional: for redirecting back after login
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (session && isAuthRoute) {
+  if (session && isAuthPageRoute) {
     // User is authenticated and trying to access login/register page
-    return NextResponse.redirect(new URL('/dashboard', request.url)); // Redirect to dashboard
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   
-  // Refresh session if expired - Supabase client handles this automatically
-  // if (session) {
-  //   await supabase.auth.refreshSession();
-  // }
+  // Refresh session if expired - Supabase client handles this automatically with `getSession`
+  // No need to explicitly call refreshSession usually.
 
   return response;
 }
@@ -69,11 +53,12 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - / (root path, handled by page.tsx)
-     * - /api/ (allow public API routes, specific auth checks within routes)
-     *   but we do want to run middleware for /api/ to grab user session if available
+     * - / (root path, usually public landing page)
+     * - Specific public assets or routes if any
+     *
+     * The goal is to run middleware for most app routes and API routes
+     * to handle session management and protection.
      */
-    // '/((?!_next/static|_next/image|favicon.ico|api/auth/callback).*)',
-     '/((?!_next/static|_next/image|favicon.ico).*)', // More general, specific API routes can check auth internally
+     '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-.*.js).*)',
   ],
 };

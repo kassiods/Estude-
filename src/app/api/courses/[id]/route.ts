@@ -1,3 +1,4 @@
+
 // src/app/api/courses/[id]/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -6,10 +7,11 @@ import { z } from 'zod';
 import { Level } from '@prisma/client';
 
 const courseUpdateSchema = z.object({
-  title: z.string().min(3, "Título deve ter pelo menos 3 caracteres.").optional(),
+  title: z.string().min(3, "Título deve ter pelo menos 3 caracteres.").max(255).optional(),
   description: z.string().optional().nullable(),
   level: z.nativeEnum(Level).optional(),
   imageUrl: z.string().url("URL da imagem inválida.").optional().nullable(),
+  dataAiHint: z.string().optional().nullable(),
 });
 
 // GET a single course by ID (publicly accessible)
@@ -18,6 +20,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const courseId = params.id;
+  // const supabase = createSupabaseServerClient(); // For fetching user-specific data like progress
+  // const { data: { user } } = await supabase.auth.getUser();
+
   try {
     const course = await prisma.course.findUnique({
       where: { id: courseId },
@@ -27,20 +32,42 @@ export async function GET(
           include: {
             contents: {
               orderBy: { order: 'asc' },
-              // TODO: When UserProgress is ready, conditionally include user's completion status
-              // select: { id: true, title: true, type: true, order: true, url: true, textContent: true, userProgress: { where: { userId: currentUserId } } }
+              select: { 
+                id: true, 
+                title: true, 
+                type: true, 
+                order: true, 
+                url: true, 
+                textContent: true,
+                // If user is logged in, fetch their progress for this content
+                // userProgress: user ? { where: { userId: user.id }, select: { completedAt: true } } : false 
+              },
             },
           },
         },
-        // TODO: When Favorites is ready, conditionally include if current user favorited this
-        // favorites: { where: { userId: currentUserId } }
+        // If user is logged in, check if this course is favorited by them
+        // favorites: user ? { where: { userId: user.id }, select: { id: true } } : false,
       },
     });
 
     if (!course) {
       return NextResponse.json({ error: "Curso não encontrado." }, { status: 404 });
     }
-    // Here you might want to augment with user-specific data like progress / favorite status
+
+    // Augment course data with user-specific info if user is logged in
+    // This part needs careful handling of the 'user' object which might be null
+    // const courseWithUserStatus = {
+    //   ...course,
+    //   isFavorite: user ? course.favorites && course.favorites.length > 0 : false,
+    //   modules: course.modules.map(module => ({
+    //     ...module,
+    //     contents: module.contents.map(content => ({
+    //       ...content,
+    //       isCompleted: user ? content.userProgress && content.userProgress.length > 0 : false,
+    //     }))
+    //   }))
+    // };
+    // For now, returning the raw course data. User-specific augmentation can be added.
     return NextResponse.json(course);
   } catch (error) {
     console.error(`Error fetching course ${courseId}:`, error);
@@ -101,6 +128,7 @@ export async function DELETE(
   }
 
   try {
+    // Consider a soft delete or ensure cascading deletes are handled if modules/contents exist
     await prisma.course.delete({
       where: { id: courseId },
     });

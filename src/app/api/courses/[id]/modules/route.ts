@@ -1,13 +1,23 @@
+
 // src/app/api/courses/[id]/modules/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { ContentType } from '@prisma/client';
 
 const moduleCreateSchema = z.object({
-  title: z.string().min(3, "Título do módulo deve ter pelo menos 3 caracteres."),
+  title: z.string().min(3, "Título do módulo deve ter pelo menos 3 caracteres.").max(255),
   description: z.string().optional().nullable(),
   order: z.number().int().positive("Ordem deve ser um número positivo."),
+});
+
+const contentCreateSchema = z.object({
+  title: z.string().min(1).max(255),
+  type: z.nativeEnum(ContentType),
+  order: z.number().int().positive(),
+  url: z.string().url().optional().nullable(),
+  textContent: z.string().optional().nullable(),
 });
 
 // GET all modules for a specific course (publicly accessible)
@@ -21,14 +31,12 @@ export async function GET(
       where: { courseId },
       orderBy: { order: 'asc' },
       include: {
-        contents: { // Optionally include contents or content count
+        contents: { 
           orderBy: { order: 'asc' },
         },
       },
     });
-    if (!modules) {
-      return NextResponse.json({ error: "Módulos não encontrados para este curso." }, { status: 404 });
-    }
+    // No need to check if !modules, findMany returns an empty array if none found
     return NextResponse.json(modules);
   } catch (error) {
     console.error(`Error fetching modules for course ${courseId}:`, error);
@@ -78,3 +86,15 @@ export async function POST(
     return NextResponse.json({ error: "Falha ao criar módulo." }, { status: 500 });
   }
 }
+
+// POST create new content within a module (admin only)
+// Example: POST /api/courses/{courseId}/modules/{moduleId}/contents
+// This route might be better as /api/modules/{moduleId}/contents
+// For simplicity, let's assume we get moduleId in the body for now if creating content with module.
+// Or, more RESTfully, this POST should be on /api/modules/{moduleId}/contents
+
+// This file is for /api/courses/{courseId}/modules.
+// Creating content should likely be in a different route structure, e.g.,
+// /api/modules/{moduleId}/contents
+// However, if you want to create a module AND its initial content in one go, the module schema could accept a `contents: { create: [] }` block.
+// The current POST above only creates the module itself.
