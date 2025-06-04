@@ -55,12 +55,15 @@ export default function CoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   useEffect(() => {
-    // Update searchTerm if query parameter changes after initial load
-    const querySearchTerm = searchParams.get('search');
-    if (querySearchTerm && querySearchTerm !== searchTerm) {
-      setSearchTerm(querySearchTerm);
+    const urlSearch = searchParams.get('search') || '';
+    // Atualiza o estado searchTerm SOMENTE se o parâmetro da URL for diferente do estado atual.
+    // Isso evita que o useEffect sobrescreva a digitação do usuário.
+    if (urlSearch !== searchTerm) {
+      setSearchTerm(urlSearch);
     }
-  }, [searchParams, searchTerm]);
+    // A dependência é apenas 'searchParams' para que o efeito rode quando a URL mudar.
+    // Não incluir 'searchTerm' aqui, pois isso causaria o problema de não conseguir apagar.
+  }, [searchParams]);
 
 
   const normalizeText = (text: string) => {
