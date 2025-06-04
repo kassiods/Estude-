@@ -6,21 +6,30 @@
   "type": "module",
   "scripts": {
     "backend:start": "node server.js",
-    "backend:dev": "nodemon server.js"
+    "backend:dev": "nodemon server.js",
+    "prisma:migrate": "npx prisma migrate dev --name init",
+    "prisma:seed": "npx prisma db seed",
+    "prisma:generate": "npx prisma generate"
   },
   "keywords": [
     "express",
     "supabase",
-    "api"
+    "api",
+    "prisma"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "@prisma/client": "^5.17.0",
+    "@supabase/supabase-js": "^2.44.4",
+    "@google/generative-ai": "^0.2.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "prisma": "^5.17.0"
   }
 }

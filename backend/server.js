@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -12,10 +11,8 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from the root .env file
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-// Import initial routes
+// Import routes
 import userRoutes from './routes/userRoutes.js';
-
-// Import other routes (ensure they are ESM compatible and use .js extension)
 import courseRoutes from './routes/courseRoutes.js';
 import moduleRoutes from './routes/moduleRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
@@ -58,12 +55,12 @@ app.use('/api/telegram', telegramImportRoutes);
 
 // Root route to check if the server is online
 app.get('/', (req, res) => {
-  res.json({ message: 'Bem-vindo à API do Study Hub!' });
+  res.status(200).json({ message: 'Study Hub Backend is online!' });
 });
 
 // Error handling middleware (should be the last middleware)
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Servidor backend rodando em http://localhost:${port}`);
+  console.log(`Servidor backend rodando em http://localhost:${port} no modo ${process.env.NODE_ENV || 'development'}`);
 });

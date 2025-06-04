@@ -1,23 +1,18 @@
-
 import { createClient } from '@supabase/supabase-js';
 // dotenv should be loaded by server.js at the application's entry point.
-// No need to call dotenv.config() here again.
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY; // This should be the service_role key for admin operations if needed, or anon key for general use.
-                                          // For user-specific operations proxied by the backend, it often uses the service_role key.
-                                          // If this client is for user-specific actions based on their token, it might be different.
-                                          // Given userService.js uses supabase.auth.admin, SUPABASE_KEY here MUST be the SERVICE_ROLE_KEY.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use SERVICE_ROLE_KEY for backend admin operations
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Erro: SUPABASE_URL e SUPABASE_KEY (geralmente service_role para backend) devem ser definidos no arquivo .env carregado pelo servidor.');
-  // Consider how to handle this critical error. Exiting might be too abrupt for a library.
-  // Throwing an error might be better if this is initialized early.
+  console.error('Erro: NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY devem ser definidos no arquivo .env carregado pelo servidor.');
+  // Consider how to handle this critical error. For a library, throwing might be better.
+  // For an app, if it cannot initialize, it might need to prevent startup.
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Optional: log successful initialization, but can be removed for production
-// console.log('Cliente Supabase (backend) inicializado.');
+// console.log('Cliente Supabase (backend com service role) inicializado.');
 
 export default supabase;

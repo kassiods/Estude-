@@ -1,21 +1,22 @@
-
 import supabase from '../supabase.js';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
-export async function createUser({ email, password, name }) {
-  let userId; // Variável para armazenar o ID do usuário do Auth
+// Função para criar usuário (Supabase Auth e Perfil no Prisma)
+async function createUser({ email, password, name }) {
+  let userId; 
 
   try {
-    // 1. Create the user with Supabase Auth using admin privileges
+    // 1. Create user in Supabase Auth using admin privileges
     const { data: authAdminData, error: authAdminError } = await supabase.auth.admin.createUser({
       email,
       password,
       user_metadata: { name: name }, 
-      email_confirm: false, // Defina como true se quiser confirmação por email. Por agora, auto-confirma.
+      email_confirm: true, // Auto-confirm for seeding/development. Set to false for production email verification.
     });
 
     if (authAdminError) {
       console.error('Supabase admin.createUser error:', authAdminError.message, authAdminError);
-      // Mensagens de erro mais específicas podem ser retornadas ao cliente se necessário
       if (authAdminError.message.includes('unique constraint') || authAdminError.message.includes('already registered')) {
           throw new Error('Um usuário com este email já existe.');
       }
@@ -29,145 +30,169 @@ export async function createUser({ email, password, name }) {
       console.error('User object or ID not available after admin.createUser.');
       throw new Error('Falha ao obter ID do usuário após o registro via admin.');
     }
-    
     userId = authAdminData.user.id;
 
-    // 2. Create a profile for the user in the 'profiles' table
-    console.log(`Tentando criar perfil para o usuário ID: ${userId}, Email: ${email}, Nome: ${name}`);
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .insert([{ 
-          id: userId,         // Link para a tabela auth.users
-          name: name,         
-          email: email,       // Armazenar email aqui também para facilitar consultas em perfis
-          photo_url: null,    // Definir um padrão ou deixar nulo
-          is_premium: false,  // Valor padrão
-       }])
-      .select()
-      .single();
-
-    if (profileError) {
-      console.error(`Supabase create profile error for user ID ${userId}:`, profileError.message, profileError);
-      let detailedErrorMessage = `Falha ao criar perfil do usuário após registro. Detalhe do erro: ${profileError.message}`;
-      if (profileError.code === '23505') { // PostgreSQL unique_violation (e.g., email or id already exists in profiles)
-        detailedErrorMessage = `Falha ao criar perfil: um perfil com este email ou ID já pode existir na tabela 'profiles'. Usuário Auth ${userId} pode precisar de limpeza ou verificação manual. Detalhe Supabase: ${profileError.details || profileError.message}`;
-      }
-
-      if (userId) {
-        console.warn(`Falha ao criar perfil para ${userId}. Tentando deletar usuário do Auth para manter consistência...`);
-        const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
-        if (deleteUserError) {
-          console.error(`CRÍTICO: Falha ao criar perfil E falha ao deletar usuário do Auth ${userId}:`, deleteUserError.message);
-          detailedErrorMessage += ` Tentativa de deletar usuário Auth ${userId} também falhou: ${deleteUserError.message}. Requer intervenção manual.`;
-        } else {
-          console.log(`Usuário Auth ${userId} deletado com sucesso após falha na criação do perfil.`);
-          detailedErrorMessage += ` Usuário Auth ${userId} foi deletado para tentar manter a consistência.`;
-        }
-      }
-      throw new Error(detailedErrorMessage);
-    }
+    // 2. Create or update user profile in Prisma 'users' table
+    // Using upsert to handle cases where the Auth user might exist but profile doesn't, or to update existing.
+    const profile = await prisma.user.upsert({
+      where: { id: userId }, 
+      update: { // Fields to update if user (by id) already exists in Prisma
+        email: email,
+        name: name,
+        updatedAt: new Date(),
+      },
+      create: { // Fields to create if user (by id) does not exist in Prisma
+        id: userId, 
+        email: email,
+        name: name,
+        isPremium: false, // Default value for new profiles
+      },
+    });
     
-    if (!profileData) {
-      // Este caso é incomum se profileError não foi setado e o insert deveria ter funcionado.
-      // Pode indicar um problema com RLS para SELECT mesmo com service_role, ou alguma inconsistência.
-      const criticalErrorMessage = `CRÍTICO: Perfil não foi retornado após a inserção para o usuário ID ${userId}, e nenhum erro de inserção explícito foi recebido. Verifique as RLS e a consistência da tabela 'profiles'.`;
-      console.error(criticalErrorMessage);
-      if (userId) {
-        console.warn(`Tentando deletar usuário do Auth ${userId} devido à falha em recuperar o perfil pós-inserção.`);
-        const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
-        if (deleteUserError) {
-          console.error(`CRÍTICO: Falha ao recuperar perfil E falha ao deletar usuário do Auth ${userId}:`, deleteUserError.message);
-        } else {
-          console.log(`Usuário Auth ${userId} deletado com sucesso após falha na verificação do perfil.`);
-        }
-      }
-      throw new Error('Falha crítica: perfil não pôde ser verificado após a criação.');
-    }
-
-    console.log(`Perfil criado com sucesso para o usuário ID: ${userId}`, profileData);
-    // admin.createUser não retorna uma sessão. 
-    // O usuário precisará fazer login separadamente após o registro.
-    return { user: authAdminData.user, session: null, profile: profileData };
+    console.log(`Profile for user ${userId} (email: ${email}) ensured in Prisma.`);
+    // admin.createUser does not return a session. User will need to log in separately.
+    return { user: authAdminData.user, profile }; 
 
   } catch (error) {
-    // Se o erro já foi tratado e lançado como uma instância de Error, relance-o
-    // Caso contrário, crie um novo Error
-    console.error('Erro geral em createUser:', error.message, error.stack);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Ocorreu um erro inesperado durante a criação do usuário.');
+    console.error('Error in createUser service:', error.message, error.stack);
+    // If profile creation/upsert in Prisma fails after the Auth user was created,
+    // consider a rollback for the Auth user, though this adds complexity.
+    // For now, a comprehensive error message is thrown.
+    throw new Error(`Falha ao registrar usuário: ${error.message}`);
   }
 }
 
-export async function loginUser({ email, password }) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+async function loginUser({ email, password }) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
-    console.error('Supabase loginUser error:', error);
-    // Personalizar mensagens de erro com base no erro do Supabase
-    if (error.message.includes('Invalid login credentials')) {
+    if (error) {
+      console.error('Supabase signInWithPassword error:', error.message);
+      // Provide more user-friendly messages for common errors
+      if (error.message.includes('Invalid login credentials')) {
         throw new Error('Email ou senha inválidos.');
+      }
+      throw new Error(error.message || 'Falha ao fazer login.');
     }
-    throw new Error(error.message || 'Falha ao fazer login.');
-  }
 
-  if (data.user) {
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, name, email, photo_url, is_premium, created_at')
-      .eq('id', data.user.id)
-      .single();
-    
-    if (profileError && profileError.code !== 'PGRST116') { // PGRST116: 0 linhas (perfil não encontrado)
-      console.error('Supabase getProfileForLogin error:', profileError);
+    if (data.user && data.user.id) {
+        // After successful Supabase Auth login, fetch user profile from Prisma
+        let profile = await prisma.user.findUnique({
+            where: { id: data.user.id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                isPremium: true,
+                createdAt: true,
+                updatedAt: true,
+                // Add other profile fields you want to return
+            }
+        });
+
+        if (!profile) {
+            // This case handles if a user exists in Auth but their profile is missing in Prisma.
+            // This might happen due to incomplete sign-up or data migration issues.
+            // Attempt to create a profile for them.
+            console.warn(`Login successful, but profile not found in Prisma for user ID: ${data.user.id}. Attempting to create it.`);
+            try {
+                profile = await prisma.user.create({
+                    data: {
+                        id: data.user.id,
+                        email: data.user.email, // email from Auth user
+                        name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'Novo Usuário', // try to get name from metadata
+                        isPremium: data.user.user_metadata?.is_premium || false, // default to false
+                    },
+                    select: { id: true, name: true, email: true, isPremium: true, createdAt: true, updatedAt: true }
+                });
+                console.log(`Successfully created missing profile for user ID: ${data.user.id}`);
+            } catch (creationError) {
+                console.error(`Failed to create missing profile for user ID ${data.user.id}:`, creationError);
+                // If profile creation fails, log it but still return auth data.
+                // The frontend might need to handle this scenario (e.g., prompt for profile setup).
+            }
+        }
+        
+        // Combine Supabase auth user data with Prisma profile data
+        const combinedUser = { ...data.user, ...profile }; 
+        return { ...data, user: combinedUser }; // Return original Supabase data (session, etc.) + combined user
     }
-    
-    const combinedUser = { ...data.user, ...profile }; 
-    return { ...data, user: combinedUser }; 
+    // This should ideally not be reached if Supabase returns user data on successful login.
+    throw new Error('Login bem-sucedido, mas dados do usuário não retornados pelo Supabase Auth.');
+  } catch (error) {
+    console.error('Error in loginUser service:', error.message, error.stack);
+    // Re-throw the error to be caught by the controller
+    throw error; // No need to wrap in new Error(`Falha no login: ${error.message}`) if it's already an Error.
   }
-  throw new Error('Login bem-sucedido, mas dados do usuário não retornados.');
 }
 
-export async function getUserById(userId) {
-  console.log(`Buscando perfil para o usuário ID: ${userId} na tabela 'profiles'`);
-  const { data, error } = await supabase
-    .from('profiles') 
-    .select('id, name, email, photo_url, is_premium, created_at, updated_at') 
-    .eq('id', userId)
-    .single();
-
-  if (error && error.code === 'PGRST116') { 
-     console.warn(`Perfil não encontrado na tabela 'profiles' para o usuário ID: ${userId}. error code: ${error.code}`);
-     return null; 
+async function getUserById(userId) {
+  console.log(`Buscando perfil para o usuário ID: ${userId} na tabela 'users' (Prisma)`);
+  try {
+      const userProfile = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { 
+              id: true,
+              name: true,
+              email: true,
+              isPremium: true,
+              createdAt: true,
+              updatedAt: true,
+              // Add more fields if necessary (e.g., admin, progressSummary)
+          },
+      });
+      
+      if (!userProfile) {
+          console.warn(`Perfil não encontrado na tabela 'users' (Prisma) para o usuário ID: ${userId}.`);
+          return null; // Or throw an error if a profile is always expected
+      }
+      console.log(`Perfil encontrado para o usuário ID: ${userId}`, userProfile);
+      return userProfile;
+  } catch (error) {
+      console.error('Prisma getUserById error:', error.message, error.stack);
+      throw new Error(`Erro ao buscar perfil do usuário: ${error.message}`);
   }
-  if (error) {
-     console.error('Supabase getUserById (profiles) error:', error);
-     throw error; 
-  }
-  console.log(`Perfil encontrado para o usuário ID: ${userId}`, data);
-  return data; 
 }
 
-export async function updateUserProfile(userId, updates) {
+async function updateUserProfile(userId, updates) {
+  // Prevent disallowed fields from being updated
   delete updates.email; 
   delete updates.id;    
-  
-  updates.updated_at = new Date().toISOString();
+  // isPremium status should be handled by a dedicated mechanism (e.g., payment webhook)
+  delete updates.isPremium; 
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId)
-    .select('id, name, email, photo_url, is_premium, created_at, updated_at') 
-    .single(); 
-  
-  if (error) {
-    console.error('Supabase updateUserProfile error:', error);
-    throw error;
+  updates.updatedAt = new Date();
+
+  try {
+      const updatedProfile = await prisma.user.update({
+          where: { id: userId },
+          data: updates,
+          select: { // Return the updated fields
+              id: true,
+              name: true,
+              email: true, // email is not updated, but good to return for consistency
+              isPremium: true, // isPremium is not updated, but good to return
+              updatedAt: true,
+              // Add other fields as needed
+          }
+      });
+      return updatedProfile;
+  } catch (error) {
+      console.error('Prisma updateUserProfile error:', error.message, error.stack);
+      // Handle specific Prisma errors, e.g., P2025 for record not found
+      if (error.code === 'P2025') {
+          throw new Error('Perfil do usuário não encontrado para atualização.');
+      }
+      throw new Error(`Erro ao atualizar perfil do usuário: ${error.message}`);
   }
-  return data;
 }
+
+export {
+  createUser,
+  loginUser,
+  getUserById,
+  updateUserProfile,
+};
