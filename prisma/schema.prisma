@@ -6,63 +6,66 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // directUrl = env("DIRECT_URL") // Removido pois DATABASE_URL já é uma conexão direta (porta 5432)
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL") // Comentado pois DATABASE_URL já é uma conexão direta (porta 5432)
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Adicionado para Prisma Migrate
 }
 
+// Autenticação e Usuários
 model User {
-  id              String    @id // Este ID virá do Supabase Auth, por isso SEM @default(uuid())
-  email           String    @unique
-  name            String?
-  isPremium       Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  coursesAuthored Course[]  @relation("CourseAuthor")
-  progress        UserProgress[]
-  favorites       Favorite[]
-  chatMessages    ChatMessage[]
-  notifications   Notification[]
-  conversationHistory ConversationHistory[]
-  adminProfile    Admin?
+  id            String    @id // UUID from Supabase Auth
+  email         String    @unique
+  name          String?
+  isPremium     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  profile       Admin? // Relação 1:1 se o usuário for admin
+  coursesAuthored Course[] @relation("CourseAuthor") // Cursos que o usuário criou
+  progress      UserProgress[]
+  favorites     Favorite[]
+  chatMessages  ChatMessage[]
+  notifications Notification[]
+  conversations ConversationHistory[]
+
+  @@map("users") // Mapeia para a tabela 'users' que criamos, não 'User' do Supabase Auth
 }
 
 model Admin {
-  id           String @id @default(cuid())
-  userId       String @unique
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String  @id @default(cuid())
+  userId       String  @unique // Chave estrangeira para User.id
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   isSuperAdmin Boolean @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }
 
+// Conteúdo Educacional
 model Course {
   id            String    @id @default(cuid())
   title         String
   description   String?   @db.Text
   level         Level     @default(BEGINNER)
   imageUrl      String?
-  dataAiHint    String?   // Para ajudar a IA a encontrar imagens de placeholder relevantes
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  authorId      String?
+  dataAiHint    String?   // Para dicas de IA ao gerar imagens
+  authorId      String?   // ID do usuário que criou o curso
   author        User?     @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   modules       Module[]
   userProgress  UserProgress[]
   favoritedBy   Favorite[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Module {
   id          String    @id @default(cuid())
   title       String
-  description String?
+  description String?   @db.Text
   order       Int       // Ordem do módulo dentro do curso
   courseId    String
   course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   contents    Content[]
+  userProgress UserProgress[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  userProgress UserProgress[]
 }
 
 model Content {
@@ -71,29 +74,30 @@ model Content {
   type        ContentType
   order       Int         // Ordem do conteúdo dentro do módulo
   url         String?     // Para vídeos, links externos
-  textContent String?     @db.Text // Para artigos, descrições de quiz
+  textContent String?     @db.Text // Para artigos, questões de quiz
   moduleId    String
   module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
   userProgress UserProgress[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
+// Progresso e Engajamento do Usuário
 model UserProgress {
   id          String    @id @default(cuid())
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
   course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  moduleId    String?   // Progresso pode ser em nível de módulo também
+  moduleId    String?   // Opcional, se o progresso for a nível de módulo
   module      Module?   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  contentId   String?   // Progresso pode ser em nível de conteúdo específico
+  contentId   String?   // Opcional, se o progresso for a nível de conteúdo específico
   content     Content?  @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  completedAt DateTime  @default(now())
-  lastAccessedAt DateTime @updatedAt
+  completedAt DateTime?
+  lastAccessedAt DateTime @default(now())
 
-  @@unique([userId, contentId], name: "UserContentProgressUnique") // Garante que um usuário não complete o mesmo conteúdo múltiplas vezes
-  // Adicionar mais índices conforme necessário, ex: @@index([userId, courseId])
+  @@unique([userId, contentId]) // Usuário só completa um conteúdo uma vez
+  @@index([userId, courseId])
 }
 
 model Favorite {
@@ -107,16 +111,14 @@ model Favorite {
   @@unique([userId, courseId])
 }
 
+// Comunidade e Interação
 model ChatMessage {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channel   String   // Ex: "general", "course- matematica-avancada"
+  channel   String   // Ex: "geral", "curso-id-matematica"
   content   String   @db.Text
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([channel, createdAt])
 }
 
 model Notification {
@@ -124,24 +126,23 @@ model Notification {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  message   String   @db.Text
-  link      String?  // Link para a página relevante (ex: curso, módulo)
+  message   String
+  link      String?  // Link para a página relevante
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
-// Para o Assistente de IA
+// AI e Personalização
 model ConversationHistory {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   prompt    String   @db.Text
   response  String   @db.Text
-  timestamp DateTime @default(now())
-
-  @@index([userId, timestamp])
+  createdAt DateTime @default(now())
 }
 
+// Enums
 enum Level {
   BEGINNER
   INTERMEDIATE
@@ -152,5 +153,5 @@ enum ContentType {
   VIDEO
   TEXT
   QUIZ
-  // Adicionar mais tipos conforme necessário: ARTICLE, PDF, EXERCISE, etc.
+  // Adicionar mais tipos conforme necessário: PODCAST, PDF, EXERCISE
 }
