@@ -1,34 +1,42 @@
 
-const express = require('express');
-const cors = require('cors');
-const path = require('path'); // Import path module
-require('dotenv').config({ path: path.resolve(__dirname, '.env') }); // Specify path for .env
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Polyfill __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the root .env file
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Import initial routes
-const userRoutes = require('./routes/userRoutes');
+import userRoutes from './routes/userRoutes.js';
 
-// Placeholder for other routes (to be converted to CommonJS and imported later)
-// const courseRoutes = require('./routes/courseRoutes');
-// const moduleRoutes = require('./routes/moduleRoutes');
-// const contentRoutes = require('./routes/contentRoutes');
-// const questionRoutes = require('./routes/questionRoutes');
-// const progressRoutes = require('./routes/progressRoutes');
-// const downloadRoutes = require('./routes/downloadRoutes');
-// const communityChatRoutes = require('./routes/communityChatRoutes');
-// const aiChatRoutes = require('./routes/aiChatRoutes');
-// const telegramImportRoutes = require('./routes/telegramImportRoutes');
+// Import other routes (ensure they are ESM compatible and use .js extension)
+import courseRoutes from './routes/courseRoutes.js';
+import moduleRoutes from './routes/moduleRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
+import questionRoutes from './routes/questionRoutes.js';
+import progressRoutes from './routes/progressRoutes.js';
+import downloadRoutes from './routes/downloadRoutes.js';
+import communityChatRoutes from './routes/communityChatRoutes.js';
+import aiChatRoutes from './routes/aiChatRoutes.js';
+import telegramImportRoutes from './routes/telegramImportRoutes.js';
 
 // Middlewares
-const errorHandler = require('./middlewares/errorHandler');
-// const authMiddleware = require('./middlewares/authMiddleware'); // If needed globally
+import errorHandler from './middlewares/errorHandler.js';
+// import authMiddleware from './middlewares/authMiddleware.js'; // If needed globally
 
 const app = express();
-const port = process.env.PORT || 3002; // Alterado de 3001 para 3002
+const port = process.env.PORT || 3002;
 
 // Global Middlewares
-app.use(cors()); // Habilita CORS para todas as rotas
-app.use(express.json()); // Para parsear JSON no corpo das requisições
-app.use(express.urlencoded({ extended: true })); // Para parsear dados de formulário URL-encoded
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Simple logging middleware
 app.use((req, res, next) => {
@@ -37,16 +45,16 @@ app.use((req, res, next) => {
 });
 
 // API Routes
-app.use('/api/users', userRoutes); // Changed from '/users' to '/api/users'
-// app.use('/api/courses', courseRoutes);
-// app.use('/api/modules', moduleRoutes);
-// app.use('/api/contents', contentRoutes);
-// app.use('/api/questions', questionRoutes);
-// app.use('/api/progress', progressRoutes);
-// app.use('/api/downloads', downloadRoutes);
-// app.use('/api/chat/community', communityChatRoutes);
-// app.use('/api/chat/ai', aiChatRoutes);
-// app.use('/api/telegram', telegramImportRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/contents', contentRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/downloads', downloadRoutes);
+app.use('/api/chat/community', communityChatRoutes);
+app.use('/api/chat/ai', aiChatRoutes);
+app.use('/api/telegram', telegramImportRoutes);
 
 // Root route to check if the server is online
 app.get('/', (req, res) => {
@@ -59,4 +67,3 @@ app.use(errorHandler);
 app.listen(port, () => {
   console.log(`Servidor backend rodando em http://localhost:${port}`);
 });
-

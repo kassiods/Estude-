@@ -1,5 +1,5 @@
 
-const supabase = require('../supabase'); // Assuming supabase client is exported from there
+import supabase from '../supabase.js'; // Assuming supabase client is exported from there
 
 const authMiddleware = async (req, res, next) => {
   console.log('Auth Middleware: Received Authorization Header:', req.headers.authorization); // Log para depuração
@@ -12,6 +12,11 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     // Verify the token with Supabase
+    // Note: The supabase client used here should be configured with the anon key
+    // if it's just for getUser, or service_role if it needs elevated privileges
+    // but getUser typically works with anon key if RLS allows or for the user themselves.
+    // The current `../supabase.js` is likely configured with SERVICE_ROLE.
+    // For `getUser(token)`, it's fine.
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
     if (error || !user) {
@@ -30,4 +35,4 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;

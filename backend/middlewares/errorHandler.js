@@ -1,3 +1,4 @@
+
 // Generic error handling middleware
 const errorHandler = (err, req, res, next) => {
   console.error('Erro não tratado:', err.message);
@@ -15,4 +16,4 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-module.exports = errorHandler;
+export default errorHandler;

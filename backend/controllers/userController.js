@@ -1,7 +1,7 @@
 
-const userService = require('../services/userService');
+import * as userService from '../services/userService.js';
 
-async function register(req, res, next) {
+export async function register(req, res, next) {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: 'Nome, email e senha são obrigatórios.' });
@@ -28,7 +28,7 @@ async function register(req, res, next) {
   }
 }
 
-async function login(req, res, next) {
+export async function login(req, res, next) {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ message: 'Email e senha são obrigatórios.' });
@@ -53,7 +53,7 @@ async function login(req, res, next) {
   }
 }
 
-async function getMe(req, res, next) {
+export async function getMe(req, res, next) {
   try {
     // req.user deve ser populado por authMiddleware com o objeto de usuário do Supabase Auth
     if (!req.user || !req.user.id) {
@@ -78,7 +78,7 @@ async function getMe(req, res, next) {
   }
 }
 
-async function updateUser(req, res, next) {
+export async function updateUser(req, res, next) {
    try {
     if (!req.user || !req.user.id) {
         return res.status(401).json({ message: 'Não autenticado ou ID do usuário não encontrado no token.'});
@@ -94,10 +94,3 @@ async function updateUser(req, res, next) {
     next(error);
   }
 }
-
-module.exports = { 
-  register,
-  login,
-  getMe,
-  updateUser
-};

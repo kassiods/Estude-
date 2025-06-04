@@ -1,7 +1,7 @@
 
-const supabase = require('../supabase');
+import supabase from '../supabase.js';
 
-async function createUser({ email, password, name }) {
+export async function createUser({ email, password, name }) {
   let userId; // Variável para armazenar o ID do usuário do Auth
 
   try {
@@ -100,7 +100,7 @@ async function createUser({ email, password, name }) {
   }
 }
 
-async function loginUser({ email, password }) {
+export async function loginUser({ email, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -132,7 +132,7 @@ async function loginUser({ email, password }) {
   throw new Error('Login bem-sucedido, mas dados do usuário não retornados.');
 }
 
-async function getUserById(userId) {
+export async function getUserById(userId) {
   console.log(`Buscando perfil para o usuário ID: ${userId} na tabela 'profiles'`);
   const { data, error } = await supabase
     .from('profiles') 
@@ -152,7 +152,7 @@ async function getUserById(userId) {
   return data; 
 }
 
-async function updateUserProfile(userId, updates) {
+export async function updateUserProfile(userId, updates) {
   delete updates.email; 
   delete updates.id;    
   
@@ -171,12 +171,3 @@ async function updateUserProfile(userId, updates) {
   }
   return data;
 }
-
-
-module.exports = { 
-  createUser,
-  loginUser,
-  getUserById,
-  updateUserProfile
-};
-
