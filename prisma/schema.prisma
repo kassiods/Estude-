@@ -8,11 +8,11 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Used for migrations, optional if not using Prisma Migrate directly often
+  // directUrl = env("DIRECT_URL") // Removido pois DATABASE_URL já é uma conexão direta (porta 5432)
 }
 
 model User {
-  id              String    @id // Should match Supabase Auth user ID, no @default(uuid())
+  id              String    @id // Este ID virá do Supabase Auth, por isso SEM @default(uuid())
   email           String    @unique
   name            String?
   isPremium       Boolean   @default(false)
@@ -28,10 +28,10 @@ model User {
 }
 
 model Admin {
-  id           String   @id @default(cuid())
-  userId       String   @unique // Foreign key to User model
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isSuperAdmin Boolean  @default(false)
+  id           String @id @default(cuid())
+  userId       String @unique
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isSuperAdmin Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -42,21 +42,21 @@ model Course {
   description   String?   @db.Text
   level         Level     @default(BEGINNER)
   imageUrl      String?
-  dataAiHint    String? // For Unsplash keyword search hint
+  dataAiHint    String?   // Para ajudar a IA a encontrar imagens de placeholder relevantes
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   authorId      String?
   author        User?     @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   modules       Module[]
   userProgress  UserProgress[]
-  favorites     Favorite[]
+  favoritedBy   Favorite[]
 }
 
 model Module {
   id          String    @id @default(cuid())
   title       String
-  description String?   @db.Text
-  order       Int       // Order of the module within the course
+  description String?
+  order       Int       // Ordem do módulo dentro do curso
   courseId    String
   course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   contents    Content[]
@@ -69,9 +69,9 @@ model Content {
   id          String      @id @default(cuid())
   title       String
   type        ContentType
-  order       Int         // Order of the content within the module
-  url         String?     // For VIDEO, PDF links
-  textContent String?     @db.Text // For TEXT, QUIZ (JSON), EXERCISE
+  order       Int         // Ordem do conteúdo dentro do módulo
+  url         String?     // Para vídeos, links externos
+  textContent String?     @db.Text // Para artigos, descrições de quiz
   moduleId    String
   module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   createdAt   DateTime    @default(now())
@@ -80,21 +80,20 @@ model Content {
 }
 
 model UserProgress {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  moduleId    String   // Progress can be associated with a module overall
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  contentId   String?  // Optional: progress can be for specific content
-  content     Content? @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  completedAt DateTime @default(now())
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleId    String?   // Progresso pode ser em nível de módulo também
+  module      Module?   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  contentId   String?   // Progresso pode ser em nível de conteúdo específico
+  content     Content?  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  completedAt DateTime  @default(now())
   lastAccessedAt DateTime @updatedAt
 
-  @@unique([userId, contentId], name: "UserContentProgressUnique") // User can complete a content only once
-  // You might want a similar unique constraint for module completion if contentId is null
-  // @@unique([userId, moduleId], name: "UserModuleProgressUnique") // if applicable
+  @@unique([userId, contentId], name: "UserContentProgressUnique") // Garante que um usuário não complete o mesmo conteúdo múltiplas vezes
+  // Adicionar mais índices conforme necessário, ex: @@index([userId, courseId])
 }
 
 model Favorite {
@@ -112,29 +111,35 @@ model ChatMessage {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  channel   String   // e.g., "general", "course-xyz-discussion"
+  channel   String   // Ex: "general", "course- matematica-avancada"
   content   String   @db.Text
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([channel, createdAt])
 }
 
 model Notification {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  message   String    @db.Text
-  link      String?   // Link to relevant page, e.g., /courses/xyz
-  read      Boolean   @default(false)
-  createdAt DateTime  @default(now())
+  message   String   @db.Text
+  link      String?  // Link para a página relevante (ex: curso, módulo)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
+// Para o Assistente de IA
 model ConversationHistory {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   prompt    String   @db.Text
   response  String   @db.Text
-  createdAt DateTime @default(now())
+  timestamp DateTime @default(now())
+
+  @@index([userId, timestamp])
 }
 
 enum Level {
@@ -144,10 +149,8 @@ enum Level {
 }
 
 enum ContentType {
-  TEXT
   VIDEO
+  TEXT
   QUIZ
-  EXERCISE // Example: For coding exercises or text-based problems
-  PDF
-  PODCAST  // Example: If you plan to add audio content
+  // Adicionar mais tipos conforme necessário: ARTICLE, PDF, EXERCISE, etc.
 }
