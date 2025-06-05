@@ -3,47 +3,40 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createSupabaseServerClient(); // Uses anon key by default
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
+  const supabase = createSupabaseServerClient();
+  const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
 
-  // Define protected routes (app/* excluding auth pages and specific public API routes)
-  const isAppRoute = pathname.startsWith('/app');
-  const isAuthApiRoute = pathname.startsWith('/api/auth'); // e.g. /api/auth/callback
-  const isPublicApiRoute = pathname.startsWith('/api/courses') && request.method === 'GET'; // Example: Publicly list courses
+  // Handle root path redirection
+  if (pathname === '/') {
+    if (session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  }
 
-  const isProtectedRoute = isAppRoute && !isAuthApiRoute && !pathname.startsWith('/api/users/me'); 
-                          // `/api/users/me` handles its own auth check but needs to be accessible to try
-
-  const isAuthPageRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
-  
-  if (isProtectedRoute && !session) {
-    // User is not authenticated and trying to access a protected app route
+  // Protect /app/* routes: redirect to login if not authenticated
+  // Exclude API routes that handle auth callback or specific public needs if any.
+  // For example, /api/auth/callback should not be protected here.
+  if (pathname.startsWith('/app') && !session) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
-    redirectUrl.searchParams.set('redirectedFrom', pathname); // Optional: for redirecting back after login
+    redirectUrl.searchParams.set('redirectedFrom', pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (session && isAuthPageRoute) {
-    // User is authenticated and trying to access login/register page
+  // Redirect authenticated users from login/register pages to dashboard
+  if (session && (pathname === '/login' || pathname === '/register')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
-  
-  // Refresh session if expired - Supabase client handles this automatically with `getSession`
-  // No need to explicitly call refreshSession usually.
 
-  return response;
+  // Default: allow the request to proceed
+  return NextResponse.next({
+    request: {
+      headers: request.headers, // Pass through original headers
+    },
+  });
 }
 
 export const config = {
@@ -53,12 +46,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - / (root path, usually public landing page)
-     * - Specific public assets or routes if any
+     * - manifest.json, sw.js, workbox files (PWA assets)
      *
-     * The goal is to run middleware for most app routes and API routes
-     * to handle session management and protection.
+     * This ensures middleware runs on /, /app/*, /login, /register, etc.
+     * but not on static assets.
      */
-     '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-.*.js).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox-.*.js).*)',
   ],
 };
