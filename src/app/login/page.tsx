@@ -33,7 +33,7 @@ export default function LoginPage() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    setIsMounted(true); // Ensure component is mounted before running session checks
+    setIsMounted(true); 
 
     const redirectedFrom = searchParams.get('redirectedFrom');
     if (redirectedFrom) {
@@ -45,13 +45,17 @@ export default function LoginPage() {
     }
     
     const checkSession = async () => {
+      console.log("[LoginPage] checkSession called"); 
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && isMounted) { // Check isMounted here too
+      if (session && isMounted) { 
+        console.log("[LoginPage] User already has session, redirecting to /dashboard"); 
         router.replace('/dashboard');
+      } else {
+        console.log("[LoginPage] No active session found for existing user."); 
       }
     };
 
-    if (isMounted) { // Only run checkSession if component is truly mounted
+    if (isMounted) { 
         checkSession();
     }
 
@@ -62,6 +66,7 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    console.log("[LoginPage] handleLogin initiated with email:", email); 
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -71,7 +76,7 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (signInError) {
-      console.error("Login error:", signInError);
+      console.error("[LoginPage] Login error:", signInError); 
       setError(signInError.message || "Credenciais inválidas ou erro desconhecido.");
       toast({
         title: "Erro no Login",
@@ -86,8 +91,8 @@ export default function LoginPage() {
         description: "Redirecionando para o painel...",
       });
       const nextUrl = searchParams.get('next') || '/dashboard';
-      console.log("Login successful, redirecting to:", nextUrl); // Added log
-      router.replace(nextUrl); // Reverted to router.replace
+      console.log("[LoginPage] Login successful, redirecting to:", nextUrl, "using router.replace()"); 
+      router.replace(nextUrl); 
     }
   };
 
@@ -100,21 +105,23 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     setMagicLinkSent(false);
+    console.log("[LoginPage] handleMagicLinkLogin initiated for email:", email); 
 
     const { error: magicLinkError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // emailRedirectTo: `${window.location.origin}/api/auth/callback`, 
+        // emailRedirectTo: `${window.location.origin}/api/auth/callback`, // Default is fine
       },
     });
     setIsLoading(false);
 
     if (magicLinkError) {
-      console.error("Magic link error:", magicLinkError);
+      console.error("[LoginPage] Magic link error:", magicLinkError); 
       setError(magicLinkError.message);
       toast({ title: "Erro ao Enviar Link Mágico", description: magicLinkError.message, variant: "destructive" });
     } else {
       setMagicLinkSent(true);
+      console.log("[LoginPage] Magic link sent successfully to:", email); 
       toast({ title: "Link Mágico Enviado", description: "Verifique seu email para o link de login." });
     }
   };
@@ -122,15 +129,17 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: 'google' | 'github') => { 
     setIsLoading(true);
     setError(null);
+    console.log("[LoginPage] handleOAuthLogin initiated for provider:", provider); 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        // redirectTo: `${window.location.origin}/api/auth/callback`,
+        // redirectTo: `${window.location.origin}/api/auth/callback`, // Default is fine
       },
     });
-    setIsLoading(false);
+    
     if (oauthError) {
-      console.error(`${provider} OAuth error:`, oauthError);
+      setIsLoading(false);
+      console.error(`[LoginPage] ${provider} OAuth error:`, oauthError); 
       setError(oauthError.message);
       toast({ title: `Erro de Login com ${provider}`, description: oauthError.message, variant: "destructive" });
     }
@@ -241,3 +250,5 @@ export default function LoginPage() {
     </div>
   );
 }
+    
+    

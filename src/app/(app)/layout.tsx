@@ -91,8 +91,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   const fetchUserProfile = useCallback(async (userId: string, userEmail?: string) => {
+    console.log('[AppLayout] fetchUserProfile called for userId:', userId); 
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser(); // Re-fetch auth user for fresh metadata
+      const { data: { user: authUser } } = await supabase.auth.getUser(); 
       if (authUser) {
         const { data: profileData, error: profileError } = await supabase
           .from('users') 
@@ -101,41 +102,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           .single();
 
         if (profileError && profileError.code !== 'PGRST116') { 
+          console.error('[AppLayout] fetchUserProfile - Prisma profileError:', profileError); 
           throw profileError;
         }
         
         const name = profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || "Usuário";
         const avatarUrl = profileData?.photo_url || authUser.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(name || "U")[0].toUpperCase()}`;
+        const isPremium = profileData?.isPremium || authUser.user_metadata?.is_premium || false;
 
+        console.log('[AppLayout] fetchUserProfile - Profile data fetched/determined:', { name, email: profileData?.email || authUser.email, avatarUrl, isPremium }); 
         setUserDisplay({
             name: name,
             email: profileData?.email || authUser.email,
             avatarUrl: avatarUrl,
             initials: (name || authUser.email || 'U').substring(0,2).toUpperCase(),
-            isPremium: profileData?.isPremium || authUser.user_metadata?.is_premium || false,
+            isPremium: isPremium,
         });
       } else {
-        setUserDisplay(null); // Should not happen if session.user was valid when calling
+        console.log('[AppLayout] fetchUserProfile - No authUser found by supabase.auth.getUser()'); 
+        setUserDisplay(null); 
       }
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("[AppLayout] Error fetching user profile:", error); 
       toast({ title: "Erro ao carregar perfil", description: (error as Error).message, variant: "destructive"});
-      setUserDisplay(null); // Ensure userDisplay is cleared on error
+      setUserDisplay(null); 
     } finally {
-      setIsLoadingUser(false); // Critical: set loading to false after operation
+      console.log('[AppLayout] fetchUserProfile - finally block, setting isLoadingUser to false.'); 
+      setIsLoadingUser(false); 
     }
-  }, [supabase, toast]); // router removed as it's not directly used inside, but pathname change triggers useEffect
+  }, [supabase, toast]); 
 
   useEffect(() => {
+    console.log('[AppLayout] useEffect for auth triggered. Current pathname:', pathname); 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('[AppLayout] onAuthStateChange event:', event, 'session ID:', session?.user?.id); 
         setIsLoadingUser(true); 
         if (session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email); 
+          await fetchUserProfile(session.user.id, session.user.email);
         } else {
           setUserDisplay(null);
           setIsLoadingUser(false); 
           if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
+            console.log('[AppLayout] onAuthStateChange: No session, redirecting to /login from', pathname); 
             router.replace('/login');
           }
         }
@@ -143,19 +152,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
     
     setIsLoadingUser(true); 
-    supabase.auth.getSession().then(async ({ data: { session }}) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+        console.log('[AppLayout] getSession initial check. Session ID:', session?.user?.id, 'Error:', error); 
         if (session?.user) {
           await fetchUserProfile(session.user.id, session.user.email); 
         } else {
             setUserDisplay(null); 
             setIsLoadingUser(false); 
             if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
+                 console.log('[AppLayout] getSession initial: No session, redirecting to /login from', pathname); 
                  router.replace('/login');
             }
         }
     });
 
     return () => {
+      console.log('[AppLayout] Unsubscribing from authListener.'); 
       authListener.subscription.unsubscribe();
     };
   }, [supabase, fetchUserProfile, router, pathname]);
@@ -167,11 +179,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error signing out:", error);
       toast({ title: "Erro ao Sair", description: error.message, variant: "destructive" });
-      setIsLoadingUser(false); // Ensure loading is false even on error
+      setIsLoadingUser(false); 
     } else {
-      setUserDisplay(null);
+      setUserDisplay(null); 
+      
       toast({ title: "Logout Efetuado", description: "Você foi desconectado." });
-      // isLoadingUser will be set to false by onAuthStateChange -> else block
       router.replace('/login'); 
     }
     setIsSidebarOpen(false);
@@ -229,7 +241,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
   
-  if (isLoadingUser) { // Show loader if actively checking auth state or fetching profile
+  if (isLoadingUser) { 
+    console.log('[AppLayout] Rendering Loader2 because isLoadingUser is true.'); 
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -237,27 +250,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If not loading and no user, and on a protected page, useEffect will handle redirect.
-  // Children should only render if user is loaded or if on a public page (which this layout doesn't cover)
-  // This layout is for (app) group, which is protected.
-  // If !isLoadingUser && !userDisplay, the useEffect has already redirected to /login if on a protected page.
-  // If execution reaches here, and userDisplay is null, it means useEffect has run, determined no user,
-  // and if pathname was /login or /register, it wouldn't redirect.
-  // This is to prevent rendering children if user is not logged in and is on a protected route.
-  // The middleware should ideally handle the primary redirect for direct access to protected routes.
-  // This client-side check is a fallback.
-  if (!userDisplay && pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
-    // This case should ideally not be hit often if middleware and useEffect are correct,
-    // but it's a final check before rendering children on a protected route without a user.
-    // console.warn("AppLayout: Rendering protection fallback. No userDisplay on protected route. Pathname:", pathname);
+  
+  if (!userDisplay) {
+    
+    console.log('[AppLayout] Rendering Loader2 because !userDisplay and !isLoadingUser (redirect to login expected).'); 
     return (
          <div className="flex min-h-screen items-center justify-center bg-background">
-            <p>Verificando sessão...</p>
-            <Loader2 className="ml-2 h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="ml-2">Redirecionando para login...</p>
         </div>
     );
   }
 
+  
+  console.log('[AppLayout] Rendering main app layout with user:', userDisplay?.email); 
   return (
       <div className="grid min-h-screen w-full md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-card md:block">
@@ -344,11 +350,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">
-            {/* Render children only if user is loaded and present, or if it's a public page this layout might accidentally wrap */}
-            {/* The main protection is !isLoadingUser && userDisplay. If these are false, it means either loading or no user */}
-             {(userDisplay || pathname.startsWith('/login') || pathname.startsWith('/register') ) && children}
+            {children}
           </main>
         </div>
       </div>
   );
 }
+    
+    
