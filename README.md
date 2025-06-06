@@ -10,5 +10,4 @@ To get started, take a look at src/app/page.tsx.
 Para remover completamente qualquer vestígio da configuração anterior do backend Express (localizado na pasta `/backend`), por favor, delete manualmente todo o diretório `backend/` da raiz do seu projeto.
 ---
 
-# Estude-
-# Estude-
+# Estude+

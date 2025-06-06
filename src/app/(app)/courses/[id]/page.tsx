@@ -238,7 +238,7 @@ export default function CourseDetailPage() {
       <Card className="overflow-hidden shadow-lg">
         <CardHeader className="relative p-0">
           <Image
-            src={course.imageUrl || 'https://placehold.co/1200x400.png?text=Study%20Hub'}
+            src={course.imageUrl || 'https://placehold.co/1200x400.png?text=Estude%2B'}
             alt={course.title}
             width={1200}
             height={400}

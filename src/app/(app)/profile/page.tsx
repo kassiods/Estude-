@@ -25,7 +25,7 @@ interface UserProfile {
 const mockUserProfile: UserProfile = {
   id: 'mockUser123',
   name: 'Usuário de Demonstração',
-  email: 'demo@studyhub.com',
+  email: 'demo@estude.plus',
   photo_url: 'https://placehold.co/150x150.png?text=Demo',
   is_premium: true,
   created_at: new Date().toISOString(),

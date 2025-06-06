@@ -76,10 +76,10 @@ interface UserDisplay {
 
 // Mock user display since login is removed
 const mockUserDisplay: UserDisplay = {
-  name: 'Usuário Study Hub',
-  email: 'usuario@studyhub.com',
-  avatarUrl: 'https://placehold.co/100x100.png?text=SH',
-  initials: 'SH',
+  name: 'Usuário Estude+',
+  email: 'usuario@estude.plus',
+  avatarUrl: 'https://placehold.co/100x100.png?text=EP',
+  initials: 'EP',
   isPremium: true, // Assuming premium access for all features
 };
 
@@ -123,7 +123,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-between border-b p-4 h-20">
         <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold font-headline text-primary" onClick={closeSidebar}>
           <BookHeart className="h-8 w-8" />
-          <span>Study Hub</span>
+          <span>Estude+</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-2 py-4">

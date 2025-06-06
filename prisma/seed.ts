@@ -23,13 +23,13 @@ async function main() {
   // In a real scenario, you might generate UUIDs or let Prisma do it if not pre-defined.
   const user1Data = {
     id: 'e4a5fbc6-1d7b-4e6a-8f0c-0d21a1b2c3d4', // Example fixed UUID
-    email: 'kassio@studyhub.com', // Changed from estude.plus to studyhub.com
+    email: 'kassio@estude.plus', // Changed from studyhub.com to estude.plus
     name: 'Kassio Borges',
     isPremium: true,
   };
   const user2Data = {
     id: 'f5b6acd7-2e8c-5f7b-9g1d-1e32b2c3d4e5', // Example fixed UUID
-    email: 'aluno@studyhub.com', // Changed from estude.plus to studyhub.com
+    email: 'aluno@estude.plus', // Changed from studyhub.com to estude.plus
     name: 'Aluno Teste',
     isPremium: false,
   };
@@ -163,7 +163,7 @@ async function main() {
   await prisma.notification.create({
     data: {
       userId: user1.id,
-      title: 'Bem-vindo ao Study Hub!',
+      title: 'Bem-vindo ao Estude+!',
       message: 'Seu novo curso "Next.js Avançado" foi adicionado. Bons estudos!',
       link: `/courses/${course1.id}`
     }
