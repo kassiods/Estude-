@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, BookOpen, Search, Sparkles, TrendingUp, Lightbulb, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // Corrected: import useRouter from next/navigation
 // For a real app, fetch courses from your API: /api/courses
 // import { type Course } from '@prisma/client'; // If you share types
 
@@ -84,7 +85,7 @@ function CourseCard({ course, progress }: { course: CourseSummary; progress?: Us
 
 export default function DashboardPage() {
   const [searchTermDashboard, setSearchTermDashboard] = useState('');
-  const router = useRouter(); // Corrected: import useRouter from next/navigation
+  const router = useRouter(); 
 
   // In a real app, fetch this data from your API
   const [courses, setCourses] = useState<CourseSummary[]>([]);
@@ -146,7 +147,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="text-center py-8 bg-card rounded-xl shadow-md">
-        <h1 className="text-4xl md:text-5xl font-bold mb-3 font-headline text-gray-800 dark:text-gray-100">Bem-vindo ao Estude+</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-3 font-headline text-gray-800 dark:text-gray-100">Bem-vindo ao Study Hub</h1>
         <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">Sua jornada para o sucesso acadêmico começa aqui. Encontre cursos e organize seus estudos.</p>
         <div className="max-w-2xl mx-auto px-4">
           <form onSubmit={handleDashboardSearch} className="relative">

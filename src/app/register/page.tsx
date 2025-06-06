@@ -105,7 +105,7 @@ export default function RegisterPage() {
            <div className="flex justify-center items-center mb-4">
             <BookHeart className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold font-headline">Crie sua Conta Estude+</CardTitle>
+          <CardTitle className="text-3xl font-bold font-headline">Crie sua Conta Study Hub</CardTitle>
           <CardDescription>
             Junte-se à nossa comunidade e comece a aprender hoje!
           </CardDescription>

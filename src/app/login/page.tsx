@@ -91,8 +91,8 @@ export default function LoginPage() {
         description: "Redirecionando para o painel...",
       });
       const nextUrl = searchParams.get('next') || '/dashboard';
-      console.log("[LoginPage] Login successful, redirecting to:", nextUrl, "using router.replace()"); 
-      router.replace(nextUrl); 
+      console.log("[LoginPage] Login successful, redirecting to:", nextUrl, "using window.location.href"); 
+      window.location.href = nextUrl; 
     }
   };
 
@@ -164,7 +164,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-3xl font-bold font-headline">Bem-vindo de volta!</CardTitle>
           <CardDescription>
-            Acesse sua conta Estude+ para continuar aprendendo.
+            Acesse sua conta Study Hub para continuar aprendendo.
           </CardDescription>
         </CardHeader>
         <CardContent>

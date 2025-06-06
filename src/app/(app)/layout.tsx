@@ -219,7 +219,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-between border-b p-4 h-20">
         <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold font-headline text-primary" onClick={closeSidebar}>
           <BookHeart className="h-8 w-8" />
-          <span>Estude+</span>
+          <span>Study Hub</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-2 py-4">

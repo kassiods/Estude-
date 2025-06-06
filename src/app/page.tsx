@@ -8,7 +8,7 @@ export default function HomePage() {
       <div className="text-center space-y-8">
         <BookHeart className="mx-auto h-24 w-24 text-primary" />
         <h1 className="text-5xl md:text-7xl font-bold text-primary font-headline">
-          Bem-vindo ao Estude+
+          Bem-vindo ao Study Hub
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
           Sua plataforma inteligente para organizar estudos, aprender com cursos interativos e alcançar seus objetivos acadêmicos com o poder da IA.

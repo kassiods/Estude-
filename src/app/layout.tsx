@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Estude+",
+  title: "Study Hub",
   description: "Sua plataforma de estudos com IA integrada.",
 };
 

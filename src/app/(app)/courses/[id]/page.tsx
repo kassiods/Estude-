@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, Star } from 'lucide-react';
+import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, Star, BookOpen } from 'lucide-react';
 import { type Level, type ContentType } from '@prisma/client';
 import { useToast } from '@/components/ui/use-toast';
 // import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -238,7 +238,7 @@ export default function CourseDetailPage() {
       <Card className="overflow-hidden shadow-lg">
         <CardHeader className="relative p-0">
           <Image
-            src={course.imageUrl || 'https://placehold.co/1200x400.png?text=Estude%2B'}
+            src={course.imageUrl || 'https://placehold.co/1200x400.png?text=Study%20Hub'}
             alt={course.title}
             width={1200}
             height={400}
