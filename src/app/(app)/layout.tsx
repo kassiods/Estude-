@@ -41,12 +41,12 @@ interface NavItemProps {
   href: string;
   icon: React.ElementType;
   label: string;
-  isPremium?: boolean;
+  isPremiumFeature?: boolean; // Renomeado para clareza, já que o usuário é sempre premium no mock
   isActive: boolean;
   onClick?: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremium, isActive, onClick }) => (
+const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremiumFeature, isActive, onClick }) => (
   <Link href={href} passHref legacyBehavior>
     <a onClick={onClick}>
       <Button
@@ -56,7 +56,7 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremium, i
       >
         <Icon className="mr-3 h-5 w-5" />
         {label}
-        {isPremium && (
+        {isPremiumFeature && ( // Exibe o badge "Premium" se for uma feature premium
           <span className="ml-auto text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">
             Premium
           </span>
@@ -71,16 +71,16 @@ interface UserDisplay {
   email: string | null;
   avatarUrl: string | null;
   initials: string;
-  isPremium: boolean;
+  isPremium: boolean; // Mantém para consistência, mas o mock é sempre premium
 }
 
-// Mock user display since login is removed
+// Usuário mockado para fins demonstrativos, já que o login real foi removido.
 const mockUserDisplay: UserDisplay = {
   name: 'Usuário Estude+',
   email: 'usuario@estude.plus',
   avatarUrl: 'https://placehold.co/100x100.png?text=EP',
   initials: 'EP',
-  isPremium: true,
+  isPremium: true, // Para funcionalidades "premium"
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -91,6 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Usa o usuário mockado diretamente
   const userDisplay = mockUserDisplay;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -98,6 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (searchTerm.trim()) {
       router.push(`/courses?search=${encodeURIComponent(searchTerm.trim())}`);
       setSearchTerm('');
+      if(isSidebarOpen) closeSidebar();
     }
   };
 
@@ -107,7 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/progress', icon: BarChart3, label: 'Meu Progresso' },
     { href: '/favorites', icon: Heart, label: 'Favoritos' },
     { href: '/community-chat', icon: Users, label: 'Comunidade' },
-    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: userDisplay?.isPremium },
+    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremiumFeature: true }, // Marcado como feature premium
     { href: '/notifications', icon: Bell, label: 'Notificações' },
   ];
 
@@ -117,6 +119,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const handleLogout = () => {
+    closeSidebar();
+    // Para o fluxo demonstrativo, redireciona para a nova página inicial
+    router.push('/');
+  };
 
   const sidebarContent = (
     <div className="flex h-full flex-col bg-card text-card-foreground">
@@ -129,7 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <ScrollArea className="flex-1 px-2 py-4">
         <nav className="grid items-start gap-1">
           {navItems.map((item) => (
-            <NavItem key={item.href} {...item} isActive={pathname === item.href} onClick={closeSidebar} isPremium={item.isPremium && !userDisplay?.isPremium} />
+            <NavItem key={item.href} {...item} isActive={pathname === item.href} onClick={closeSidebar} />
           ))}
         </nav>
       </ScrollArea>
@@ -137,9 +145,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {bottomNavItems.map((item) => (
           <NavItem key={item.href} {...item} isActive={pathname === item.href} onClick={closeSidebar} />
         ))}
-        <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={() => { setIsSidebarOpen(false); router.push('/'); }}>
+        <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={handleLogout}>
           <LogOut className="mr-3 h-5 w-5" />
-          Sair (simulado)
+          Sair
         </Button>
       </div>
     </div>
@@ -223,9 +231,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </DropdownMenuItem>
                     {userDisplay.isPremium && <DropdownMenuItem>Gerenciar Assinatura (simulado)</DropdownMenuItem>}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => { router.push('/'); }}>
+                    <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sair (simulado)
+                      Sair
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
