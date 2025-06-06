@@ -1,3 +1,4 @@
+
 // src/app/(app)/courses/[id]/page.tsx
 "use client";
 
@@ -10,10 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, Star, BookOpen } from 'lucide-react';
+import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, BookOpen } from 'lucide-react';
 import { type Level, type ContentType } from '@prisma/client';
 import { useToast } from '@/components/ui/use-toast';
-// import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface ContentItem {
   id: string;
@@ -22,7 +22,7 @@ interface ContentItem {
   order: number;
   url?: string | null;
   textContent?: string | null;
-  isCompleted?: boolean; // Added for progress tracking
+  isCompleted?: boolean;
 }
 
 interface ModuleItem {
@@ -40,18 +40,16 @@ interface CourseDetails {
   level: Level;
   imageUrl: string | null;
   modules: ModuleItem[];
-  // userProgressPercentage?: number; // Overall progress
   isFavorite?: boolean;
 }
 
 const mockCourseDetails: CourseDetails = {
-    id: 'clxwg9z960002118z3f9qkvvb', // Matches one from seed/courses page
+    id: 'clxwg9z960002118z3f9qkvvb',
     title: 'Next.js Avançado com App Router',
     description: 'Domine o Next.js moderno, Server Components, Server Actions, estratégias de cache avançadas e construa aplicações web full-stack robustas e performáticas.',
     level: 'ADVANCED',
     imageUrl: 'https://placehold.co/1200x600.png?text=Next.js+Detalhes',
     isFavorite: false,
-    // userProgressPercentage: 33, // Example
     modules: [
       {
         id: 'm1',
@@ -100,14 +98,13 @@ export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  // const supabase = createSupabaseBrowserClient();
   
   const courseId = params.id as string;
 
   const [course, setCourse] = useState<CourseDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false); // Local state for favorite
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
     if (courseId) {
@@ -115,16 +112,9 @@ export default function CourseDetailPage() {
         setIsLoading(true);
         setError(null);
         try {
-          // TODO: Replace with actual API call: /api/courses/${courseId}
-          // This API should fetch the course, its modules, contents,
-          // and ideally user's progress and favorite status for this course.
-          // const response = await fetch(`/api/courses/${courseId}`);
-          // if (!response.ok) throw new Error('Falha ao carregar detalhes do curso.');
-          // const data: CourseDetails = await response.json();
-          
           // Simulate API call with mock data
           await new Promise(resolve => setTimeout(resolve, 500));
-          if (courseId === mockCourseDetails.id) { // Check if requested ID matches mock
+          if (courseId === mockCourseDetails.id) {
             setCourse(mockCourseDetails);
             setIsFavorite(mockCourseDetails.isFavorite || false);
           } else {
@@ -144,22 +134,9 @@ export default function CourseDetailPage() {
   }, [courseId, toast]);
 
   const toggleFavorite = async () => {
-    // TODO: API call to /api/favorites to add/remove favorite
-    // For now, just toggle local state and show toast
     const newFavoriteStatus = !isFavorite;
     setIsFavorite(newFavoriteStatus); 
     try {
-      // Example API call (needs to be implemented)
-      // const response = await fetch('/api/favorites', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ courseId: course?.id, isFavorite: newFavoriteStatus }),
-      // });
-      // if (!response.ok) {
-      //   // Revert UI change on failure
-      //   setIsFavorite(!newFavoriteStatus);
-      //   throw new Error('Falha ao atualizar favorito.');
-      // }
       toast({
         title: newFavoriteStatus ? "Adicionado aos Favoritos" : "Removido dos Favoritos",
         description: `Curso "${course?.title}" ${newFavoriteStatus ? 'adicionado aos' : 'removido dos'} seus favoritos. (Simulado)`,
@@ -170,8 +147,6 @@ export default function CourseDetailPage() {
   };
 
   const markContentAsCompleted = (moduleId: string, contentId: string) => {
-    // TODO: API call to /api/progress to mark content as completed
-    // Update local state for immediate UI feedback
     setCourse(prevCourse => {
       if (!prevCourse) return null;
       return {

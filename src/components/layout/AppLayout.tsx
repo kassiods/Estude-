@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation'; // Correto para App Router
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ const mockUser = {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter(); // Inicializa o router aqui
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPathname, setCurrentPathname] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
@@ -75,11 +75,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const handleLogout = () => {
-    // Em uma implementação real, você chamaria supabase.auth.signOut() aqui.
-    // Ex: try { await supabase.auth.signOut(); } catch (error) { console.error("Error signing out:", error); }
-    // console.log("Tentando redirecionar para /login..."); // Para depuração
-    router.push('/login');
-    if (isSidebarOpen) { // Fecha o sidebar mobile se estiver aberto
+    router.push('/'); // Redirect to a public page as login is removed
+    if (isSidebarOpen) {
       setIsSidebarOpen(false);
     }
   };
@@ -97,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-between border-b border-sidebar-border p-4 h-20">
         <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold font-headline text-primary">
           <BookHeart className="h-8 w-8" />
-          <span>Study Hub</span>
+          <span>Estude+</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 px-2 py-4">
@@ -111,7 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <NavItem href="/settings" icon={Settings} label="Configurações" pathname={currentPathname} />
         <Button variant="ghost" className="w-full justify-start text-base py-6" onClick={handleLogout}>
           <LogOut className="mr-3 h-5 w-5" />
-          Sair
+          Sair (Simulado)
         </Button>
       </div>
     </div>
@@ -195,9 +192,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuItem>
                 {mockUser.isPremium && <DropdownMenuItem>Gerenciar Assinatura</DropdownMenuItem>}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}> {/* onClick está aqui */}
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sair
+                  Sair (Simulado)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

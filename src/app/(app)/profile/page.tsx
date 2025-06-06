@@ -4,12 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, Edit3, BookMarked, BarChart3, CheckCircle, ShieldCheck, Loader2, CalendarDays } from "lucide-react";
+import { Edit3, BookMarked, BarChart3, CheckCircle, ShieldCheck, Loader2, CalendarDays } from "lucide-react";
 import { CourseCard, type Course } from '@/components/courses/CourseCard'; 
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,7 +44,7 @@ const mockStudyHistory = [
 
 const mockUserStats = {
   overallProgress: 65, 
-  coursesCompleted: 2, // Ajustado para corresponder ao mockStudyHistory
+  coursesCompleted: 2,
   modulesStudied: 42,
 };
 const defaultPhotoUrl = 'https://placehold.co/150x150.png?text=User';
@@ -61,7 +61,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setIsLoading(true);
-    // Simula o carregamento de dados do perfil
     setTimeout(() => {
       setProfile(mockUserProfile);
       setEditableName(mockUserProfile.name || '');
@@ -74,7 +73,6 @@ export default function ProfilePage() {
     if (!profile) return;
     setIsLoadingSave(true);
     
-    // Simula o salvamento dos dados
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     setProfile(prevProfile => ({

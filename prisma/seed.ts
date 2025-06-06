@@ -1,19 +1,7 @@
 
 import { PrismaClient, Level, ContentType } from '@prisma/client';
-// import { createClient } from '@supabase/supabase-js'; // Supabase client no longer needed for user seeding
 
 const prisma = new PrismaClient();
-
-// Supabase Admin client for auth is no longer needed here if we are not creating Supabase Auth users
-// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-// const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// if (!supabaseUrl || !supabaseServiceKey) {
-//   throw new Error(
-//     'Supabase URL or Service Role Key is not defined in .env file. Cannot seed users for Supabase Auth.'
-//   );
-// }
-// const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('Start seeding ...');
@@ -23,13 +11,13 @@ async function main() {
   // In a real scenario, you might generate UUIDs or let Prisma do it if not pre-defined.
   const user1Data = {
     id: 'e4a5fbc6-1d7b-4e6a-8f0c-0d21a1b2c3d4', // Example fixed UUID
-    email: 'kassio@estude.plus', // Changed from studyhub.com to estude.plus
+    email: 'kassio@estude.plus',
     name: 'Kassio Borges',
     isPremium: true,
   };
   const user2Data = {
     id: 'f5b6acd7-2e8c-5f7b-9g1d-1e32b2c3d4e5', // Example fixed UUID
-    email: 'aluno@estude.plus', // Changed from studyhub.com to estude.plus
+    email: 'aluno@estude.plus',
     name: 'Aluno Teste',
     isPremium: false,
   };

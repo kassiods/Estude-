@@ -1,3 +1,4 @@
+
 // src/app/(app)/courses/page.tsx
 "use client";
 
@@ -10,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowRight, Filter, Search, BookOpen, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { Progress } from '@/components/ui/progress'; // Assuming you have this component
-import { type Level } from '@prisma/client'; // Import Level enum
+import { Progress } from '@/components/ui/progress';
+import { type Level } from '@prisma/client';
 
 interface CourseItem {
   id: string;
@@ -19,8 +20,7 @@ interface CourseItem {
   description: string | null;
   level: Level;
   imageUrl: string | null;
-  modulesCount: number; // Add a count for modules
-  // userProgressPercentage?: number; // Optional: if you fetch progress summary
+  modulesCount: number;
 }
 
 function CourseItemCard({ course }: { course: CourseItem }) {
@@ -46,11 +46,6 @@ function CourseItemCard({ course }: { course: CourseItem }) {
           <div className="text-xs text-muted-foreground mt-auto">
             <span>{course.modulesCount} módulos</span>
           </div>
-          {/* {course.userProgressPercentage !== undefined && (
-            <div className="mt-2">
-              <Progress value={course.userProgressPercentage} className="h-2" />
-            </div>
-          )} */}
         </CardContent>
         <CardFooter className="p-4 md:p-6 pt-0">
             <Button variant="outline" className="w-full mt-2">
@@ -64,7 +59,7 @@ function CourseItemCard({ course }: { course: CourseItem }) {
 
 function CoursesPageContent() {
   const searchParams = useSearchParams();
-  const router = useRouter(); // For updating URL without full navigation if needed
+  const router = useRouter();
 
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,10 +67,8 @@ function CoursesPageContent() {
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [levelFilter, setLevelFilter] = useState(searchParams.get('level') || 'all');
-  // Add other filters like category if needed
 
   useEffect(() => {
-    // Update state from URL params on initial load or param change
     setSearchTerm(searchParams.get('search') || '');
     setLevelFilter(searchParams.get('level') || 'all');
   }, [searchParams]);
@@ -89,13 +82,6 @@ function CoursesPageContent() {
         if (searchTerm) queryParams.append('search', searchTerm);
         if (levelFilter !== 'all') queryParams.append('level', levelFilter);
         
-        // TODO: Fetch courses from your API: /api/courses
-        // const response = await fetch(`/api/courses?${queryParams.toString()}`);
-        // if (!response.ok) {
-        //   throw new Error(`Failed to fetch courses: ${response.statusText}`);
-        // }
-        // const data = await response.json();
-        // For now, using mock data:
         const mockData: CourseItem[] = [
             { id: 'clxwg9z960002118z3f9qkvvb', title: 'Next.js Avançado com App Router', description: 'Domine o Next.js moderno, Server Components, e construa aplicações robustas.', level: 'ADVANCED', imageUrl: 'https://placehold.co/600x400.png?text=Next.js+Avançado', modulesCount: 5 },
             { id: 'clxwg9z9t0006118z6z9wlvg0', title: 'Prisma ORM Essencial', description: 'Aprenda a modelar seu banco de dados e realizar queries com Prisma.', level: 'INTERMEDIATE', imageUrl: 'https://placehold.co/600x400.png?text=Prisma+Essencial', modulesCount: 3 },
@@ -103,7 +89,6 @@ function CoursesPageContent() {
             { id: 'c4', title: 'Algoritmos e Estruturas de Dados', description: 'Fundamentos essenciais para todo desenvolvedor.', level: 'INTERMEDIATE', imageUrl: 'https://placehold.co/600x400.png?text=Algoritmos', modulesCount: 10 },
         ];
         
-        // Simulate filtering based on searchTerm and levelFilter
         let filteredMockData = mockData;
         if (searchTerm) {
             filteredMockData = filteredMockData.filter(course => 
@@ -124,13 +109,13 @@ function CoursesPageContent() {
       }
     }
     fetchCourses();
-  }, [searchTerm, levelFilter]); // Refetch when filters change
+  }, [searchTerm, levelFilter]);
 
   const handleFilterChange = () => {
     const params = new URLSearchParams(searchParams.toString());
     if (searchTerm) params.set('search', searchTerm); else params.delete('search');
     if (levelFilter !== 'all') params.set('level', levelFilter); else params.delete('level');
-    router.push(`/courses?${params.toString()}`, { scroll: false }); // Update URL, trigger useEffect
+    router.push(`/courses?${params.toString()}`, { scroll: false });
   };
   
   const levels: { value: string, label: string }[] = [

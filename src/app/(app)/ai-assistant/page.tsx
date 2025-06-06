@@ -4,15 +4,12 @@
 import React, { useState, useEffect } from 'react';
 import { ChatInterface, Message } from '@/components/chat/ChatInterface';
 import { aiStudyAssistant, AiStudyAssistantInput, AiStudyAssistantOutput } from '@/ai/flows/ai-study-assistant';
-// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // No longer needed
-// import { ShieldCheck, Sparkles } from "lucide-react"; // ShieldCheck no longer needed
 
 // Mock user, as login is removed. This user is assumed to have access.
 const mockUser = {
   id: 'localUser123', // A generic ID for local usage
   name: 'Usuário',
   avatar: 'https://placehold.co/100x100.png?text=U',
-  // isPremium: true, // Not checked anymore, access is assumed
 };
 
 export default function AiAssistantPage() {
@@ -73,21 +70,6 @@ export default function AiAssistantPage() {
       setIsLoading(false);
     }
   };
-
-  // Premium check is removed as login/auth system is dismantled.
-  // if (!mockUser.isPremium) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center h-full p-8">
-  //       <Alert className="max-w-md text-center bg-card shadow-xl">
-  //         <ShieldCheck className="h-8 w-8 mx-auto mb-4 text-primary" />
-  //         <AlertTitle className="text-2xl font-bold mb-2 font-headline">Recurso Premium</AlertTitle>
-  //         <AlertDescription className="text-lg">
-  //           O Assistente de Estudos AI está disponível exclusivamente para membros Premium. Atualize sua conta para desbloquear este e muitos outros recursos poderosos!
-  //         </AlertDescription>
-  //       </Alert>
-  //     </div>
-  //   );
-  // }
 
   const currentUserForChat = userName ? { id: mockUser.id, name: userName, avatar: userAvatar } : undefined;
 

@@ -1,3 +1,4 @@
+
 // src/app/(app)/dashboard/page.tsx
 "use client";
 
@@ -7,18 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight, BookOpen, Search, Sparkles, TrendingUp, Lightbulb, CheckCircle } from 'lucide-react';
+import { ArrowRight, BookOpen, Search, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation'; // Corrected: import useRouter from next/navigation
-// For a real app, fetch courses from your API: /api/courses
-// import { type Course } from '@prisma/client'; // If you share types
+import { useRouter } from 'next/navigation';
 
 interface CourseSummary {
   id: string;
   title: string;
   description: string;
   imageUrl?: string | null;
-  category?: string; // Added category for display
+  category?: string;
   dataAiHint?: string;
 }
 
@@ -87,19 +86,17 @@ export default function DashboardPage() {
   const [searchTermDashboard, setSearchTermDashboard] = useState('');
   const router = useRouter(); 
 
-  // In a real app, fetch this data from your API
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgressSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API calls
     setIsLoading(true);
     setTimeout(() => {
       setCourses(mockCourses);
       setUserProgress(mockUserProgress);
       setIsLoading(false);
-    }, 500); // Simulate network delay
+    }, 500);
   }, []);
 
   const handleDashboardSearch = (event: React.FormEvent<HTMLFormElement>) => {
