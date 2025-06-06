@@ -4,14 +4,15 @@
 import React, { useState, useEffect } from 'react';
 import { ChatInterface, Message } from '@/components/chat/ChatInterface';
 import { aiStudyAssistant, AiStudyAssistantInput, AiStudyAssistantOutput } from '@/ai/flows/ai-study-assistant';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, Sparkles } from "lucide-react";
+// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // No longer needed
+// import { ShieldCheck, Sparkles } from "lucide-react"; // ShieldCheck no longer needed
 
+// Mock user, as login is removed. This user is assumed to have access.
 const mockUser = {
-  id: 'user123',
-  name: 'Kassio',
-  avatar: 'https://placehold.co/100x100.png',
-  isPremium: true, // Simulate premium status
+  id: 'localUser123', // A generic ID for local usage
+  name: 'Usuário',
+  avatar: 'https://placehold.co/100x100.png?text=U',
+  // isPremium: true, // Not checked anymore, access is assumed
 };
 
 export default function AiAssistantPage() {
@@ -21,11 +22,9 @@ export default function AiAssistantPage() {
   const [userAvatar, setUserAvatar] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    // Simulate fetching user data
     setUserName(mockUser.name);
     setUserAvatar(mockUser.avatar);
 
-    // Initial AI message
     setMessages([
       {
         id: 'initial-ai-message',
@@ -41,7 +40,7 @@ export default function AiAssistantPage() {
     const userMessage: Message = {
       id: Date.now().toString() + '-user',
       text,
-      sender: mockUser.id, 
+      sender: mockUser.id,
       timestamp: new Date(),
       name: mockUser.name,
       avatar: mockUser.avatar,
@@ -51,10 +50,10 @@ export default function AiAssistantPage() {
 
     try {
       const input: AiStudyAssistantInput = { query: text };
-      const result: AiStudyAssistantOutput = await aiStudyAssistant(input); // Prompt is in English, response will be too unless AI is instructed otherwise
+      const result: AiStudyAssistantOutput = await aiStudyAssistant(input);
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
-        text: result.response, // Consider if AI response needs translation or if prompt should ask for pt-BR
+        text: result.response,
         sender: 'ai',
         timestamp: new Date(),
         name: 'Assistente AI'
@@ -75,20 +74,21 @@ export default function AiAssistantPage() {
     }
   };
 
-  if (!mockUser.isPremium) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
-        <Alert className="max-w-md text-center bg-card shadow-xl">
-          <ShieldCheck className="h-8 w-8 mx-auto mb-4 text-primary" />
-          <AlertTitle className="text-2xl font-bold mb-2 font-headline">Recurso Premium</AlertTitle>
-          <AlertDescription className="text-lg">
-            O Assistente de Estudos AI está disponível exclusivamente para membros Premium. Atualize sua conta para desbloquear este e muitos outros recursos poderosos!
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-  
+  // Premium check is removed as login/auth system is dismantled.
+  // if (!mockUser.isPremium) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center h-full p-8">
+  //       <Alert className="max-w-md text-center bg-card shadow-xl">
+  //         <ShieldCheck className="h-8 w-8 mx-auto mb-4 text-primary" />
+  //         <AlertTitle className="text-2xl font-bold mb-2 font-headline">Recurso Premium</AlertTitle>
+  //         <AlertDescription className="text-lg">
+  //           O Assistente de Estudos AI está disponível exclusivamente para membros Premium. Atualize sua conta para desbloquear este e muitos outros recursos poderosos!
+  //         </AlertDescription>
+  //       </Alert>
+  //     </div>
+  //   );
+  // }
+
   const currentUserForChat = userName ? { id: mockUser.id, name: userName, avatar: userAvatar } : undefined;
 
   return (

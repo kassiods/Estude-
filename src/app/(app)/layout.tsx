@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,17 +17,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { toast } from '@/components/ui/use-toast'; 
-import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { useTheme } from 'next-themes';
 
 import {
   LayoutDashboard,
   BookOpen,
   Users,
-  Sparkles, 
-  Bell,     
-  Heart,    
+  Sparkles,
+  Bell,
+  Heart,
   UserCircle,
   Settings,
   LogOut,
@@ -37,15 +34,14 @@ import {
   BookHeart,
   Sun,
   Moon,
-  Loader2,
-  BarChart3 
+  BarChart3
 } from 'lucide-react';
 
 interface NavItemProps {
   href: string;
   icon: React.ElementType;
   label: string;
-  isPremium?: boolean; 
+  isPremium?: boolean;
   isActive: boolean;
   onClick?: () => void;
 }
@@ -75,125 +71,33 @@ interface UserDisplay {
   email: string | null;
   avatarUrl: string | null;
   initials: string;
-  isPremium: boolean; 
+  isPremium: boolean;
 }
+
+// Mock user display since login is removed
+const mockUserDisplay: UserDisplay = {
+  name: 'Usuário Study Hub',
+  email: 'usuario@studyhub.com',
+  avatarUrl: 'https://placehold.co/100x100.png?text=SH',
+  initials: 'SH',
+  isPremium: true, // Assuming premium access for all features
+};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
   const { theme, setTheme } = useTheme();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [userDisplay, setUserDisplay] = useState<UserDisplay | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const userDisplay = mockUserDisplay; // Use mock user
 
-  const fetchUserProfile = useCallback(async (userId: string, userEmail?: string) => {
-    console.log('[AppLayout] fetchUserProfile called for userId:', userId); 
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser(); 
-      if (authUser) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('users') 
-          .select('name, email, photo_url, isPremium')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') { 
-          console.error('[AppLayout] fetchUserProfile - Prisma profileError:', profileError); 
-          throw profileError;
-        }
-        
-        const name = profileData?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || "Usuário";
-        const avatarUrl = profileData?.photo_url || authUser.user_metadata?.avatar_url || `https://placehold.co/100x100.png?text=${(name || "U")[0].toUpperCase()}`;
-        const isPremium = profileData?.isPremium || authUser.user_metadata?.is_premium || false;
-
-        console.log('[AppLayout] fetchUserProfile - Profile data fetched/determined:', { name, email: profileData?.email || authUser.email, avatarUrl, isPremium }); 
-        setUserDisplay({
-            name: name,
-            email: profileData?.email || authUser.email,
-            avatarUrl: avatarUrl,
-            initials: (name || authUser.email || 'U').substring(0,2).toUpperCase(),
-            isPremium: isPremium,
-        });
-      } else {
-        console.log('[AppLayout] fetchUserProfile - No authUser found by supabase.auth.getUser()'); 
-        setUserDisplay(null); 
-      }
-    } catch (error) {
-      console.error("[AppLayout] Error fetching user profile:", error); 
-      toast({ title: "Erro ao carregar perfil", description: (error as Error).message, variant: "destructive"});
-      setUserDisplay(null); 
-    } finally {
-      console.log('[AppLayout] fetchUserProfile - finally block, setting isLoadingUser to false.'); 
-      setIsLoadingUser(false); 
-    }
-  }, [supabase, toast]); 
-
-  useEffect(() => {
-    console.log('[AppLayout] useEffect for auth triggered. Current pathname:', pathname); 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[AppLayout] onAuthStateChange event:', event, 'session ID:', session?.user?.id); 
-        setIsLoadingUser(true); 
-        if (session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email);
-        } else {
-          setUserDisplay(null);
-          setIsLoadingUser(false); 
-          if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
-            console.log('[AppLayout] onAuthStateChange: No session, redirecting to /login from', pathname); 
-            router.replace('/login');
-          }
-        }
-      }
-    );
-    
-    setIsLoadingUser(true); 
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-        console.log('[AppLayout] getSession initial check. Session ID:', session?.user?.id, 'Error:', error); 
-        if (session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email); 
-        } else {
-            setUserDisplay(null); 
-            setIsLoadingUser(false); 
-            if (pathname !== '/login' && pathname !== '/register' && !pathname.startsWith('/api/auth')) {
-                 console.log('[AppLayout] getSession initial: No session, redirecting to /login from', pathname); 
-                 router.replace('/login');
-            }
-        }
-    });
-
-    return () => {
-      console.log('[AppLayout] Unsubscribing from authListener.'); 
-      authListener.subscription.unsubscribe();
-    };
-  }, [supabase, fetchUserProfile, router, pathname]);
-
-
-  const handleLogout = async () => {
-    setIsLoadingUser(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error("Error signing out:", error);
-      toast({ title: "Erro ao Sair", description: error.message, variant: "destructive" });
-      setIsLoadingUser(false); 
-    } else {
-      setUserDisplay(null); 
-      
-      toast({ title: "Logout Efetuado", description: "Você foi desconectado." });
-      router.replace('/login'); 
-    }
-    setIsSidebarOpen(false);
-  };
-  
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       router.push(`/courses?search=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); 
+      setSearchTerm('');
     }
   };
 
@@ -202,14 +106,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/courses', icon: BookOpen, label: 'Cursos' },
     { href: '/progress', icon: BarChart3, label: 'Meu Progresso' },
     { href: '/favorites', icon: Heart, label: 'Favoritos' },
-    { href: '/community-chat', icon: Users, label: 'Comunidade' }, 
-    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: true }, 
-    { href: '/notifications', icon: Bell, label: 'Notificações' }, 
+    { href: '/community-chat', icon: Users, label: 'Comunidade' },
+    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremium: true }, // Premium status is now from mock
+    { href: '/notifications', icon: Bell, label: 'Notificações' },
   ];
 
   const bottomNavItems = [
     { href: '/profile', icon: UserCircle, label: 'Meu Perfil' },
-    { href: '/settings', icon: Settings, label: 'Configurações' }, 
+    { href: '/settings', icon: Settings, label: 'Configurações' },
   ];
 
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -233,37 +137,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {bottomNavItems.map((item) => (
           <NavItem key={item.href} {...item} isActive={pathname === item.href} onClick={closeSidebar} />
         ))}
-        <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={handleLogout}>
+        <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={() => { /* Logout removed */ setIsSidebarOpen(false); router.push('/'); /* Redirect to a public page or similar */}}>
           <LogOut className="mr-3 h-5 w-5" />
-          Sair
+          Sair (simulado)
         </Button>
       </div>
     </div>
   );
-  
-  if (isLoadingUser) { 
-    console.log('[AppLayout] Rendering Loader2 because isLoadingUser is true.'); 
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
 
-  
-  if (!userDisplay) {
-    
-    console.log('[AppLayout] Rendering Loader2 because !userDisplay and !isLoadingUser (redirect to login expected).'); 
-    return (
-         <div className="flex min-h-screen items-center justify-center bg-background">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="ml-2">Redirecionando para login...</p>
-        </div>
-    );
-  }
-
-  
-  console.log('[AppLayout] Rendering main app layout with user:', userDisplay?.email); 
   return (
       <div className="grid min-h-screen w-full md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-card md:block">
@@ -286,7 +167,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {sidebarContent}
               </SheetContent>
             </Sheet>
-            
+
             <div className="relative flex-1 md:grow-0">
               <form onSubmit={handleSearchSubmit}>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -306,7 +187,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   size="icon"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
-                  className="rounded-full h-9 w-9" 
+                  className="rounded-full h-9 w-9"
                 >
                   {theme === "dark" ? (
                     <Sun className="h-5 w-5" />
@@ -314,39 +195,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Moon className="h-5 w-5" />
                   )}
                 </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={userDisplay?.avatarUrl || undefined} alt={userDisplay?.name || 'User'} data-ai-hint="user avatar"/>
-                      <AvatarFallback>{userDisplay?.initials || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{userDisplay?.name || 'Usuário'}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {userDisplay?.email || 'Não disponível'}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">Meu Perfil</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">Configurações</Link>
-                  </DropdownMenuItem>
-                  {userDisplay?.isPremium && <DropdownMenuItem>Gerenciar Assinatura</DropdownMenuItem>}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {userDisplay && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={userDisplay.avatarUrl || undefined} alt={userDisplay.name || 'User'} data-ai-hint="user avatar"/>
+                        <AvatarFallback>{userDisplay.initials || 'U'}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userDisplay.name || 'Usuário'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {userDisplay.email || 'Não disponível'}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">Meu Perfil</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">Configurações</Link>
+                    </DropdownMenuItem>
+                    {userDisplay.isPremium && <DropdownMenuItem>Gerenciar Assinatura (simulado)</DropdownMenuItem>}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => { /* Logout removed */ router.push('/'); /* Redirect to a public page or similar */ }}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sair (simulado)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </header>
           <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">
@@ -356,5 +239,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
   );
 }
-    
-    

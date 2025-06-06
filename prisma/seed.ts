@@ -1,99 +1,52 @@
 
 import { PrismaClient, Level, ContentType } from '@prisma/client';
-import { createClient } from '@supabase/supabase-js';
-// import { hash } from 'bcryptjs'; // Não é mais necessário para senhas, Supabase Auth cuida disso
+// import { createClient } from '@supabase/supabase-js'; // Supabase client no longer needed for user seeding
 
 const prisma = new PrismaClient();
 
-// Initialize Supabase client with SERVICE ROLE KEY for admin actions
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Supabase Admin client for auth is no longer needed here if we are not creating Supabase Auth users
+// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+// const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error(
-    'Supabase URL or Service Role Key is not defined in .env file. Cannot seed users.'
-  );
-}
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// if (!supabaseUrl || !supabaseServiceKey) {
+//   throw new Error(
+//     'Supabase URL or Service Role Key is not defined in .env file. Cannot seed users for Supabase Auth.'
+//   );
+// }
+// const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 async function main() {
   console.log('Start seeding ...');
 
-  // --- Seed Users ---
-  const usersToSeed = [
-    { email: 'kassio@estude.plus', name: 'Kassio Borges', isPremium: true, password: 'password123' },
-    { email: 'aluno@estude.plus', name: 'Aluno Teste', isPremium: false, password: 'password456' },
-  ];
+  // --- Seed Users directly in Prisma ---
+  // Using fixed UUIDs for consistency in seed data if relationships depend on them.
+  // In a real scenario, you might generate UUIDs or let Prisma do it if not pre-defined.
+  const user1Data = {
+    id: 'e4a5fbc6-1d7b-4e6a-8f0c-0d21a1b2c3d4', // Example fixed UUID
+    email: 'kassio@studyhub.com', // Changed from estude.plus to studyhub.com
+    name: 'Kassio Borges',
+    isPremium: true,
+  };
+  const user2Data = {
+    id: 'f5b6acd7-2e8c-5f7b-9g1d-1e32b2c3d4e5', // Example fixed UUID
+    email: 'aluno@studyhub.com', // Changed from estude.plus to studyhub.com
+    name: 'Aluno Teste',
+    isPremium: false,
+  };
 
-  const createdUserProfiles = [];
+  const user1 = await prisma.user.upsert({
+    where: { id: user1Data.id },
+    update: { email: user1Data.email, name: user1Data.name, isPremium: user1Data.isPremium },
+    create: user1Data,
+  });
+  console.log(`Ensured user: ${user1.email}`);
 
-  for (const userData of usersToSeed) {
-    let authUserId: string;
-
-    // 1. Check if user already exists in Supabase Auth
-    const { data: { users: existingAuthUsers }, error: findError } = await supabaseAdmin.auth.admin.listUsers({ email: userData.email } as any);
-
-    if (findError && findError.message !== "No user found with that email") {
-        console.error(`Error finding user ${userData.email} in Supabase Auth:`, findError.message);
-        continue; 
-    }
-
-    if (existingAuthUsers && existingAuthUsers.length > 0) {
-      authUserId = existingAuthUsers[0].id;
-      console.log(`User ${userData.email} already exists in Supabase Auth with ID: ${authUserId}. Ensuring profile exists.`);
-      // Optionally update metadata if needed
-      await supabaseAdmin.auth.admin.updateUserById(authUserId, {
-        user_metadata: { name: userData.name }
-      });
-    } else {
-      console.log(`Creating user ${userData.email} in Supabase Auth...`);
-      const { data: authUserResponse, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true, // Auto-confirm for seeding
-        user_metadata: { name: userData.name },
-      });
-
-      if (authError) {
-        console.error(`Error creating user ${userData.email} in Supabase Auth:`, authError.message);
-        continue; 
-      }
-      if (!authUserResponse.user) {
-        console.error(`User object not returned for ${userData.email} from Supabase Auth.`);
-        continue;
-      }
-      authUserId = authUserResponse.user.id;
-      console.log(`User ${userData.email} created in Supabase Auth with ID: ${authUserId}`);
-    }
-
-    // 2. Create or update profile in Prisma 'users' table
-    const userProfile = await prisma.user.upsert({
-      where: { id: authUserId },
-      update: {
-        name: userData.name,
-        isPremium: userData.isPremium,
-        email: userData.email, // Ensure email is also updated/set in profile
-      },
-      create: {
-        id: authUserId, // Use the ID from Supabase Auth
-        email: userData.email,
-        name: userData.name,
-        isPremium: userData.isPremium,
-      },
-    });
-    createdUserProfiles.push(userProfile);
-    console.log(`Profile for ${userProfile.email} (ID: ${userProfile.id}) ensured in Prisma.`);
-  }
-  
-  if (createdUserProfiles.length === 0) {
-    console.warn("No users were seeded or found. Related data might not be seeded correctly.");
-    // Depending on your needs, you might want to throw an error or return here.
-    // For now, we'll proceed, but relations might be empty.
-    // return; 
-  }
-
-  const user1 = createdUserProfiles.find(u => u.email === 'kassio@estude.plus');
-  const user2 = createdUserProfiles.find(u => u.email === 'aluno@estude.plus');
+  const user2 = await prisma.user.upsert({
+    where: { id: user2Data.id },
+    update: { email: user2Data.email, name: user2Data.name, isPremium: user2Data.isPremium },
+    create: user2Data,
+  });
+  console.log(`Ensured user: ${user2.email}`);
 
   // --- Seed Courses ---
   const course1 = await prisma.course.create({
@@ -159,101 +112,93 @@ async function main() {
   console.log(`Created course: ${course2.title}`);
 
   // --- Seed UserProgress ---
-  if (user1) {
-    const firstContentCourse1Module1 = await prisma.content.findFirst({
-      where: { module: { courseId: course1.id, order: 1 }, order: 1 },
-    });
+  // User1 is now directly from Prisma creation
+  const firstContentCourse1Module1 = await prisma.content.findFirst({
+    where: { module: { courseId: course1.id, order: 1 }, order: 1 },
+  });
 
-    if (firstContentCourse1Module1) {
-      await prisma.userProgress.create({
-        data: {
-          userId: user1.id,
-          courseId: course1.id,
-          moduleId: firstContentCourse1Module1.moduleId,
-          contentId: firstContentCourse1Module1.id,
-          completedAt: new Date(),
-        },
-      });
-      console.log(`Created progress for ${user1.email} on content: ${firstContentCourse1Module1.title}`);
-    }
+  if (firstContentCourse1Module1) {
+    await prisma.userProgress.create({
+      data: {
+        userId: user1.id,
+        courseId: course1.id,
+        moduleId: firstContentCourse1Module1.moduleId,
+        contentId: firstContentCourse1Module1.id,
+        completedAt: new Date(),
+      },
+    });
+    console.log(`Created progress for ${user1.email} on content: ${firstContentCourse1Module1.title}`);
   }
 
   // --- Seed Favorites ---
-  if (user1) {
-    await prisma.favorite.create({
-      data: {
-        userId: user1.id,
-        courseId: course2.id,
-      },
-    });
-    console.log(`Created favorite for ${user1.email} on course: ${course2.title}`);
-  }
+  // User1 is now directly from Prisma creation
+  await prisma.favorite.create({
+    data: {
+      userId: user1.id,
+      courseId: course2.id,
+    },
+  });
+  console.log(`Created favorite for ${user1.email} on course: ${course2.title}`);
 
   // --- Seed ChatMessages ---
-  if (user1 && user2) {
-    await prisma.chatMessage.create({
-      data: {
-        userId: user1.id,
-        channel: 'geral',
-        content: 'Olá! Alguém por aí para discutir Next.js?',
-      },
-    });
-    await prisma.chatMessage.create({
-      data: {
-        userId: user2.id,
-        channel: 'geral',
-        content: 'Oi Kassio! Estou começando com o App Router.',
-      },
-    });
-    console.log('Created chat messages.');
-  }
+  // user1 and user2 are now directly from Prisma creation
+  await prisma.chatMessage.create({
+    data: {
+      userId: user1.id,
+      channel: 'geral',
+      content: 'Olá! Alguém por aí para discutir Next.js?',
+    },
+  });
+  await prisma.chatMessage.create({
+    data: {
+      userId: user2.id,
+      channel: 'geral',
+      content: 'Oi Kassio! Estou começando com o App Router.',
+    },
+  });
+  console.log('Created chat messages.');
 
   // --- Seed Notifications ---
-  if (user1) {
-    await prisma.notification.create({
-      data: {
-        userId: user1.id,
-        title: 'Bem-vindo ao Estude+!',
-        message: 'Seu novo curso "Next.js Avançado" foi adicionado. Bons estudos!',
-        link: `/courses/${course1.id}`
-      }
-    });
-  }
-  if (user2) {
-     await prisma.notification.create({
-      data: {
-        userId: user2.id,
-        title: 'Novo curso disponível!',
-        message: 'Confira o curso "Prisma ORM Essencial" e aprimore suas habilidades.',
-        link: `/courses/${course2.id}`,
-        read: true
-      }
-    });
-    console.log('Created notifications.');
-  }
+  // user1 and user2 are now directly from Prisma creation
+  await prisma.notification.create({
+    data: {
+      userId: user1.id,
+      title: 'Bem-vindo ao Study Hub!',
+      message: 'Seu novo curso "Next.js Avançado" foi adicionado. Bons estudos!',
+      link: `/courses/${course1.id}`
+    }
+  });
+   await prisma.notification.create({
+    data: {
+      userId: user2.id,
+      title: 'Novo curso disponível!',
+      message: 'Confira o curso "Prisma ORM Essencial" e aprimore suas habilidades.',
+      link: `/courses/${course2.id}`,
+      read: true
+    }
+  });
+  console.log('Created notifications.');
 
   // --- Seed ConversationHistory (AI Chat) ---
-  if (user1) {
-    await prisma.conversationHistory.create({
-      data: {
-        userId: user1.id,
-        prompt: 'Me explique Server Components em Next.js.',
-        response: 'Server Components permitem renderizar UI no servidor, reduzindo o JavaScript enviado ao cliente e melhorando o tempo de carregamento inicial. Eles podem acessar diretamente fontes de dados do backend.',
-      },
-    });
-    console.log('Created conversation history.');
-  }
-  
+  // User1 is now directly from Prisma creation
+  await prisma.conversationHistory.create({
+    data: {
+      userId: user1.id,
+      prompt: 'Me explique Server Components em Next.js.',
+      response: 'Server Components permitem renderizar UI no servidor, reduzindo o JavaScript enviado ao cliente e melhorando o tempo de carregamento inicial. Eles podem acessar diretamente fontes de dados do backend.',
+    },
+  });
+  console.log('Created conversation history.');
+
   // --- Seed Admin ---
-  if (user1) { // Kassio is an admin
-    await prisma.admin.create({
-      data: {
-        userId: user1.id, 
-        isSuperAdmin: true,
-      }
-    });
-    console.log(`Admin profile created for ${user1.email}`);
-  }
+  // User1 is now directly from Prisma creation
+  await prisma.admin.create({
+    data: {
+      userId: user1.id,
+      isSuperAdmin: true,
+    }
+  });
+  console.log(`Admin profile created for ${user1.email}`);
 
   console.log('Seeding finished.');
 }
