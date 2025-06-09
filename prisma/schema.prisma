@@ -1,0 +1,103 @@
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String?
+  photoUrl    String?   @map("photo_url")
+  isPremium   Boolean   @default(false) @map("is_premium")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Example relations (uncomment and adapt if needed)
+  // courses     Course[]     @relation("UserCourses") // If users can create courses
+  // favorites   Favorite[]
+  // progress    UserProgress[]
+}
+
+model Course {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  level         Level     @default(BEGINNER)
+  imageUrl      String?   @map("image_url")
+  dataAiHint    String?   @map("data_ai_hint") // Added based on API routes
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  modules       Module[]
+  // user          User?     @relation("UserCourses", fields: [userId], references: [id]) // If courses belong to a user
+  // userId        String?
+  // favoritedBy   Favorite[]
+}
+
+model Module {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  order         Int
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId      String    @map("course_id")
+  contents      Content[]
+}
+
+model Content {
+  id            String      @id @default(cuid())
+  title         String
+  type          ContentType
+  order         Int
+  url           String?
+  textContent   String?     @map("text_content")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  module        Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId      String      @map("module_id")
+  // userProgress  UserProgress[]
+}
+
+// model Favorite {
+//   id        String   @id @default(cuid())
+//   user      User     @relation(fields: [userId], references: [id])
+//   userId    String
+//   course    Course   @relation(fields: [courseId], references: [id])
+//   courseId  String
+//   createdAt DateTime @default(now())
+
+//   @@unique([userId, courseId])
+// }
+
+// model UserProgress {
+//   id            String    @id @default(cuid())
+//   user          User      @relation(fields: [userId], references: [id])
+//   userId        String
+//   content       Content   @relation(fields: [contentId], references: [id])
+//   contentId     String
+//   isCompleted   Boolean   @default(false) @map("is_completed")
+//   completedAt   DateTime? @map("completed_at")
+
+//   @@unique([userId, contentId])
+// }
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ContentType {
+  VIDEO
+  TEXT
+  QUIZ
+}

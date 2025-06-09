@@ -2,17 +2,21 @@
   "name": "estude-plus",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev -p 9003",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
-  },
+"scripts": {
+  "dev": "next dev -p 9003",
+  "build": "next build",
+  "start": "next start",
+  "lint": "next lint",
+  "typecheck": "tsc --noEmit",
+  "db:push": "prisma db push",
+  "db:seed": "ts-node --esm prisma/seed.ts",
+  "postinstall": "prisma generate"
+},
   "dependencies": {
     "@genkit-ai/googleai": "^1.0.1",
     "@genkit-ai/next": "1.11.1",
     "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
@@ -22,6 +26,7 @@
     "@radix-ui/react-select": "^2.1.1",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.1",
     "@supabase/ssr": "^0.4.0",
@@ -50,6 +55,9 @@
     "tailwindcss": "^3.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\"}\" prisma/seed.ts"
   },
   "overrides": {
     "next": "15.0.0-rc.0",
