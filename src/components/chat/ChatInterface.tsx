@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Paperclip, Send, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
 
 export interface Message {
   id: string;
@@ -148,11 +150,3 @@ export function ChatInterface({
     </Card>
   );
 }
-
-// Dummy Card components if not imported from ui/card
-const Card = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}>{children}</div>;
-const CardHeader = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("flex flex-col space-y-1.5 p-6", className)}>{children}</div>;
-const CardTitle = ({ className, children }: { className?: string, children: React.ReactNode }) => <h3 className={cn("text-2xl font-semibold leading-none tracking-tight", className)}>{children}</h3>;
-const CardDescription = ({ className, children }: { className?: string, children: React.ReactNode }) => <p className={cn("text-sm text-muted-foreground", className)}>{children}</p>;
-const CardContent = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("p-6 pt-0", className)}>{children}</div>;
-const CardFooter = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("flex items-center p-6 pt-0", className)}>{children}</div>;

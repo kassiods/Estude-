@@ -1,9 +1,7 @@
-
 // src/app/api/courses/[id]/modules/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { ContentType } from '@prisma/client';
 
 const moduleCreateSchema = z.object({
   title: z.string().min(3, "Título do módulo deve ter pelo menos 3 caracteres.").max(255),

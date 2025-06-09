@@ -1,11 +1,10 @@
-
 // src/app/(app)/progress/page.tsx
 "use client";
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, ListChecks, Target } from 'lucide-react';
+import { BarChart3, ListChecks, Target, CheckCircle } from 'lucide-react';
 
 const mockOverallProgress = {
   coursesInProgress: 2,
@@ -89,11 +88,3 @@ export default function ProgressPage() {
     </div>
   );
 }
-
-// Placeholder para o ícone CheckCircle se não for importado de lucide-react
-const CheckCircle = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className || "h-5 w-5"}>
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-  </svg>
-);

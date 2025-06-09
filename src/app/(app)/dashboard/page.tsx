@@ -86,18 +86,12 @@ export default function DashboardPage() {
   const [searchTermDashboard, setSearchTermDashboard] = useState('');
   const router = useRouter(); 
 
-  const [courses, setCourses] = useState<CourseSummary[]>([]);
-  const [userProgress, setUserProgress] = useState<UserProgressSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize state directly with mock data
+  const [courses, setCourses] = useState<CourseSummary[]>(mockCourses);
+  const [userProgress, setUserProgress] = useState<UserProgressSummary[]>(mockUserProgress);
+  // Set isLoading to false initially as data is preloaded, skipping skeleton UI for now
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setCourses(mockCourses);
-      setUserProgress(mockUserProgress);
-      setIsLoading(false);
-    }, 500);
-  }, []);
 
   const handleDashboardSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -110,7 +104,18 @@ export default function DashboardPage() {
     return userProgress.find(p => p.courseId === courseId);
   };
 
-  if (isLoading) {
+  // If you still want to show skeletons for a brief moment, you could re-introduce a short
+  // useEffect to set isLoading to true then false, but for diagnosing startup, direct data is simpler.
+  // useEffect(() => {
+  //   setIsLoading(true);
+  //   const timer = setTimeout(() => {
+  //     setIsLoading(false);
+  //   }, 100); // very short delay
+  //   return () => clearTimeout(timer);
+  // }, []);
+
+
+  if (isLoading) { // This block will likely not be hit with isLoading starting as false
     return (
       <div className="space-y-8">
         <div className="text-center py-8 bg-card rounded-xl shadow-md animate-pulse">
@@ -177,8 +182,8 @@ export default function DashboardPage() {
         </div>
         {courses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.slice(0,3).map(course => (
-                <CourseCard key={course.id} course={course} progress={getProgressForCourse(course.id)} />
+            {courses.slice(0,3).map(courseItem => ( // Renamed to avoid conflict with useState 'courses'
+                <CourseCard key={courseItem.id} course={courseItem} progress={getProgressForCourse(courseItem.id)} />
             ))}
             </div>
         ) : (
@@ -200,3 +205,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
