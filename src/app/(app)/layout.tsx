@@ -41,7 +41,7 @@ interface NavItemProps {
   href: string;
   icon: React.ElementType;
   label: string;
-  isPremiumFeature?: boolean; // Renomeado para clareza, já que o usuário é sempre premium no mock
+  isPremiumFeature?: boolean;
   isActive: boolean;
   onClick?: () => void;
 }
@@ -56,7 +56,7 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremiumFea
       >
         <Icon className="mr-3 h-5 w-5" />
         {label}
-        {isPremiumFeature && ( // Exibe o badge "Premium" se for uma feature premium
+        {isPremiumFeature && (
           <span className="ml-auto text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full">
             Premium
           </span>
@@ -71,16 +71,15 @@ interface UserDisplay {
   email: string | null;
   avatarUrl: string | null;
   initials: string;
-  isPremium: boolean; // Mantém para consistência, mas o mock é sempre premium
+  isPremium: boolean;
 }
 
-// Usuário mockado para fins demonstrativos, já que o login real foi removido.
 const mockUserDisplay: UserDisplay = {
   name: 'Usuário Estude+',
   email: 'usuario@estude.plus',
   avatarUrl: 'https://placehold.co/100x100.png?text=EP',
   initials: 'EP',
-  isPremium: true, // Para funcionalidades "premium"
+  isPremium: true,
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -90,8 +89,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [mounted, setMounted] = useState(false);
 
-  // Usa o usuário mockado diretamente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const userDisplay = mockUserDisplay;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -109,7 +112,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/progress', icon: BarChart3, label: 'Meu Progresso' },
     { href: '/favorites', icon: Heart, label: 'Favoritos' },
     { href: '/community-chat', icon: Users, label: 'Comunidade' },
-    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremiumFeature: true }, // Marcado como feature premium
+    { href: '/ai-assistant', icon: Sparkles, label: 'Assistente AI', isPremiumFeature: true },
     { href: '/notifications', icon: Bell, label: 'Notificações' },
   ];
 
@@ -122,7 +125,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = () => {
     closeSidebar();
-    // Para o fluxo demonstrativo, redireciona para a nova página inicial
     router.push('/');
   };
 
@@ -194,14 +196,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   variant="ghost"
                   size="icon"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  aria-label={theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'}
+                  aria-label={mounted ? (theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro') : 'Alternar tema'}
                   className="rounded-full h-9 w-9"
                 >
-                  {theme === "dark" ? (
+                  {mounted && (theme === "dark" ? (
                     <Sun className="h-5 w-5" />
                   ) : (
                     <Moon className="h-5 w-5" />
-                  )}
+                  ))}
+                  {!mounted && <Moon className="h-5 w-5" /> /* Or a neutral icon or nothing */}
                 </Button>
               {userDisplay && (
                 <DropdownMenu>
