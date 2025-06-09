@@ -11,9 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, BookOpen } from 'lucide-react';
+import { Heart, CheckCircle, PlayCircle, FileText, HelpCircle, Loader2, AlertTriangle, ArrowLeft, BookOpen, ClipboardList } from 'lucide-react';
 import { type Level, type ContentType } from '@prisma/client';
 import { useToast } from '@/components/ui/use-toast';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface ContentItem {
   id: string;
@@ -33,6 +35,18 @@ interface ModuleItem {
   contents: ContentItem[];
 }
 
+interface QuestionOption {
+  id: string;
+  text: string;
+}
+
+interface QuestionItem {
+  id: string;
+  text: string;
+  options: QuestionOption[];
+  correctOptionId: string;
+}
+
 interface CourseDetails {
   id: string;
   title: string;
@@ -40,6 +54,7 @@ interface CourseDetails {
   level: Level;
   imageUrl: string | null;
   modules: ModuleItem[];
+  questions?: QuestionItem[];
   isFavorite?: boolean;
 }
 
@@ -48,7 +63,7 @@ const mockCourseDetails: CourseDetails = {
     title: 'Next.js Avançado com App Router',
     description: 'Domine o Next.js moderno, Server Components, Server Actions, estratégias de cache avançadas e construa aplicações web full-stack robustas e performáticas.',
     level: 'ADVANCED',
-    imageUrl: 'https://placehold.co/1200x600.png?text=Next.js+Detalhes',
+    imageUrl: 'https://placehold.co/1200x600.png?text=Estude%2B',
     isFavorite: false,
     modules: [
       {
@@ -83,6 +98,30 @@ const mockCourseDetails: CourseDetails = {
         ],
       },
     ],
+    questions: [
+      {
+        id: 'q1',
+        text: 'Qual hook do React é usado para lidar com efeitos colaterais em componentes funcionais?',
+        options: [
+          { id: 'q1o1', text: 'useState' },
+          { id: 'q1o2', text: 'useEffect' },
+          { id: 'q1o3', text: 'useContext' },
+          { id: 'q1o4', text: 'useReducer' },
+        ],
+        correctOptionId: 'q1o2',
+      },
+      {
+        id: 'q2',
+        text: 'Qual a principal característica do App Router introduzido no Next.js 13?',
+        options: [
+          { id: 'q2o1', text: 'Melhora na performance de build' },
+          { id: 'q2o2', text: 'Suporte nativo a Server Components' },
+          { id: 'q2o3', text: 'Novo sistema de CSS-in-JS' },
+          { id: 'q2o4', text: 'Integração com Deno' },
+        ],
+        correctOptionId: 'q2o2',
+      },
+    ]
 };
 
 const ContentIcon = ({ type }: { type: ContentType }) => {
@@ -105,6 +144,9 @@ export default function CourseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+  const [answerFeedback, setAnswerFeedback] = useState<Record<string, 'correct' | 'incorrect' | null>>({});
+
 
   useEffect(() => {
     if (courseId) {
@@ -112,7 +154,6 @@ export default function CourseDetailPage() {
         setIsLoading(true);
         setError(null);
         try {
-          // Simulate API call with mock data
           await new Promise(resolve => setTimeout(resolve, 500));
           if (courseId === mockCourseDetails.id) {
             setCourse(mockCourseDetails);
@@ -123,7 +164,6 @@ export default function CourseDetailPage() {
 
         } catch (err) {
           setError((err as Error).message);
-          console.error("Error fetching course details:", err);
           toast({ title: "Erro", description: (err as Error).message, variant: "destructive" });
         } finally {
           setIsLoading(false);
@@ -164,6 +204,22 @@ export default function CourseDetailPage() {
       };
     });
     toast({ title: "Progresso Salvo!", description: "Conteúdo marcado como concluído. (Simulado)" });
+  };
+
+  const handleSelectAnswer = (questionId: string, optionId: string) => {
+    setSelectedAnswers(prev => ({ ...prev, [questionId]: optionId }));
+    setAnswerFeedback(prev => ({ ...prev, [questionId]: null })); // Reseta o feedback ao mudar a resposta
+  };
+
+  const handleVerifyAnswer = (questionId: string, correctOptionId: string) => {
+    const userAnswerId = selectedAnswers[questionId];
+    if (userAnswerId === correctOptionId) {
+      toast({ title: "Correto!", description: "Parabéns, você acertou!" });
+      setAnswerFeedback(prev => ({ ...prev, [questionId]: 'correct' }));
+    } else {
+      toast({ title: "Incorreto!", description: "Tente novamente.", variant: "destructive" });
+      setAnswerFeedback(prev => ({ ...prev, [questionId]: 'incorrect' }));
+    }
   };
 
 
@@ -293,8 +349,50 @@ export default function CourseDetailPage() {
           ) : (
             <p className="text-muted-foreground">Nenhum módulo disponível para este curso ainda.</p>
           )}
+
+          {course.questions && course.questions.length > 0 && (
+            <div className="mt-10">
+              <h3 className="text-2xl font-semibold mb-6 font-headline flex items-center">
+                <ClipboardList className="mr-3 h-7 w-7 text-primary" /> Questões para Praticar
+              </h3>
+              <div className="space-y-8">
+                {course.questions.map((question) => (
+                  <Card key={question.id} className="p-6 shadow-md">
+                    <p className="font-semibold text-lg mb-4">{question.text}</p>
+                    <RadioGroup
+                      value={selectedAnswers[question.id]}
+                      onValueChange={(value) => handleSelectAnswer(question.id, value)}
+                      className="space-y-3 mb-6"
+                    >
+                      {question.options.map((option) => (
+                        <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                          <RadioGroupItem value={option.id} id={`${question.id}-${option.id}`} className="h-5 w-5"/>
+                          <Label htmlFor={`${question.id}-${option.id}`} className="font-normal text-base cursor-pointer flex-1">
+                            {option.text}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                    <Button 
+                      onClick={() => handleVerifyAnswer(question.id, question.correctOptionId)} 
+                      disabled={!selectedAnswers[question.id]}
+                      className="w-full md:w-auto"
+                    >
+                      Verificar Resposta
+                    </Button>
+                    {answerFeedback[question.id] && (
+                      <p className={`mt-4 text-sm font-medium ${answerFeedback[question.id] === 'correct' ? 'text-green-600' : 'text-red-600'}`}>
+                        {answerFeedback[question.id] === 'correct' ? 'Resposta Correta! 🎉' : 'Resposta Incorreta. Tente novamente!'}
+                      </p>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
