@@ -5,9 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { ChatInterface, Message } from '@/components/chat/ChatInterface';
 import { aiStudyAssistant, AiStudyAssistantInput, AiStudyAssistantOutput } from '@/ai/flows/ai-study-assistant';
 
-// Mock user, as login is removed. This user is assumed to have access.
-const mockUser = {
-  id: 'localUser123', // A generic ID for local usage
+const genericUser = {
+  id: 'localUser123', 
   name: 'Usuário',
   avatar: 'https://placehold.co/100x100.png?text=U',
 };
@@ -15,17 +14,12 @@ const mockUser = {
 export default function AiAssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    setUserName(mockUser.name);
-    setUserAvatar(mockUser.avatar);
-
     setMessages([
       {
         id: 'initial-ai-message',
-        text: `Olá ${mockUser.name}! Sou seu Assistente de Estudos AI. Como posso te ajudar hoje? Você pode me pedir para explicar conceitos, criar planos de estudo ou recomendar conteúdo.`,
+        text: `Olá ${genericUser.name}! Sou seu Assistente de Estudos AI. Como posso te ajudar hoje? Você pode me pedir para explicar conceitos, criar planos de estudo ou recomendar conteúdo.`,
         sender: 'ai',
         timestamp: new Date(),
         name: 'Assistente AI'
@@ -37,10 +31,10 @@ export default function AiAssistantPage() {
     const userMessage: Message = {
       id: Date.now().toString() + '-user',
       text,
-      sender: mockUser.id,
+      sender: genericUser.id,
       timestamp: new Date(),
-      name: mockUser.name,
-      avatar: mockUser.avatar,
+      name: genericUser.name,
+      avatar: genericUser.avatar,
     };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsLoading(true);
@@ -71,8 +65,6 @@ export default function AiAssistantPage() {
     }
   };
 
-  const currentUserForChat = userName ? { id: mockUser.id, name: userName, avatar: userAvatar } : undefined;
-
   return (
     <div className="h-full">
        <ChatInterface
@@ -82,7 +74,7 @@ export default function AiAssistantPage() {
         chatTitle="Assistente de Estudos AI"
         chatDescription="Seu tutor pessoal de IA para dúvidas, resumos e planos de estudo."
         placeholder="Pergunte ao Assistente AI..."
-        currentUser={currentUserForChat}
+        currentUser={genericUser}
       />
     </div>
   );

@@ -2,62 +2,30 @@
 // src/app/(app)/settings/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/use-toast";
-import { UserCircle, Palette, Bell, Shield, Edit3, Save, X, Trash2, Moon, Sun, Laptop } from 'lucide-react';
+import { Palette, Bell, Shield, Trash2, Moon, Sun, Laptop, UserCircle2 } from 'lucide-react';
 
-// Mock user data - em uma aplicação real, viria do estado global ou API
-const mockUser = {
-  name: 'Usuário Estude+',
-  email: 'usuario@estude.plus',
-  avatarUrl: 'https://placehold.co/150x150.png?text=EP',
-  initials: 'EP',
-};
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileName, setProfileName] = useState(mockUser.name);
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState(mockUser.avatarUrl);
-
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
 
-  const handleProfileSave = () => {
-    // Simula o salvamento
-    mockUser.name = profileName;
-    mockUser.avatarUrl = profileAvatarUrl;
-    setIsEditingProfile(false);
-    toast({
-      title: "Perfil Atualizado (Simulado)",
-      description: "Suas informações de perfil foram salvas.",
-    });
-  };
-
-  const handleProfileCancel = () => {
-    setProfileName(mockUser.name);
-    setProfileAvatarUrl(mockUser.avatarUrl);
-    setIsEditingProfile(false);
-  };
-
   const handleDeleteAccount = () => {
-    // Simula a exclusão da conta
     toast({
       title: "Conta Excluída (Simulado)",
       description: "Sua conta foi excluída da plataforma.",
       variant: "destructive",
     });
-    // Em uma app real, redirecionaria para uma página de despedida ou login
   };
 
 
@@ -66,51 +34,23 @@ export default function SettingsPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-bold flex items-center font-headline">
-            <UserCircle className="mr-3 h-8 w-8 text-primary" /> Configurações do Perfil
+             Configurações
           </CardTitle>
-          <CardDescription>Gerencie suas informações pessoais e detalhes da conta.</CardDescription>
+          <CardDescription>Gerencie as preferências da sua conta e da aplicação.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={isEditingProfile ? profileAvatarUrl : mockUser.avatarUrl} alt={mockUser.name} data-ai-hint="user avatar" />
-              <AvatarFallback>{mockUser.initials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="text-xl font-semibold">{isEditingProfile ? profileName : mockUser.name}</h3>
-              <p className="text-muted-foreground">{mockUser.email}</p>
-            </div>
-            {!isEditingProfile ? (
-              <Button variant="outline" size="icon" className="ml-auto" onClick={() => setIsEditingProfile(true)}>
-                <Edit3 className="h-5 w-5" />
-                <span className="sr-only">Editar Perfil</span>
-              </Button>
-            ) : (
-              <div className="ml-auto flex gap-2">
-                 <Button variant="ghost" size="icon" onClick={handleProfileCancel}>
-                    <X className="h-5 w-5" />
-                    <span className="sr-only">Cancelar</span>
-                </Button>
-                <Button size="icon" onClick={handleProfileSave}>
-                    <Save className="h-5 w-5" />
-                    <span className="sr-only">Salvar</span>
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {isEditingProfile && (
-            <div className="space-y-4 pt-4 border-t">
-              <div>
-                <Label htmlFor="profileName" className="text-base">Nome</Label>
-                <Input id="profileName" value={profileName} onChange={(e) => setProfileName(e.target.value)} className="mt-1 text-base h-11" />
-              </div>
-              <div>
-                <Label htmlFor="profileAvatarUrl" className="text-base">URL do Avatar</Label>
-                <Input id="profileAvatarUrl" value={profileAvatarUrl} onChange={(e) => setProfileAvatarUrl(e.target.value)} className="mt-1 text-base h-11" />
-              </div>
-            </div>
-          )}
+      </Card>
+      
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold flex items-center font-headline">
+            <UserCircle2 className="mr-3 h-7 w-7 text-primary" /> Informações do Perfil (Demonstrativo)
+          </CardTitle>
+          <CardDescription>A edição do perfil será habilitada com o backend.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-muted-foreground p-4 border rounded-md bg-muted/50">
+                As opções para editar nome, e-mail e foto do perfil estarão disponíveis aqui quando o sistema de autenticação e backend forem implementados.
+            </p>
         </CardContent>
       </Card>
 
@@ -210,5 +150,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

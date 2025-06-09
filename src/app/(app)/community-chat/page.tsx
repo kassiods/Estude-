@@ -33,10 +33,10 @@ const mockMessagesStore: { [channelId: string]: Message[] } = {
   study_tips: [],
 };
 
-const mockCurrentUser = {
-  id: 'current_user_123',
-  name: 'Carlos Mendes',
-  avatar: 'https://placehold.co/100x100.png?text=CM',
+const genericChatUser = {
+  id: 'generic_user_789',
+  name: 'Participante',
+  avatar: 'https://placehold.co/100x100.png?text=P',
 };
 
 
@@ -61,9 +61,9 @@ export default function CommunityChatPage() {
     const newMessage: Message = {
       id: Date.now().toString(),
       text,
-      sender: mockCurrentUser.id,
-      name: mockCurrentUser.name,
-      avatar: mockCurrentUser.avatar,
+      sender: genericChatUser.id,
+      name: genericChatUser.name,
+      avatar: genericChatUser.avatar,
       timestamp: new Date(),
     };
     setTimeout(() => {
@@ -112,7 +112,7 @@ export default function CommunityChatPage() {
             chatTitle={selectedChannel.name}
             chatDescription={selectedChannel.description}
             placeholder={`Mensagem #${selectedChannel.name.toLowerCase().replace(/\s+/g, '-')}`}
-            currentUser={mockCurrentUser}
+            currentUser={genericChatUser}
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full bg-card rounded-lg shadow-xl p-8">

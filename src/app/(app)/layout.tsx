@@ -4,16 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -28,7 +19,6 @@ import {
   Heart,
   UserCircle,
   Settings,
-  LogOut,
   Search,
   Menu,
   BookHeart,
@@ -66,22 +56,6 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon: Icon, label, isPremiumFea
   </Link>
 );
 
-interface UserDisplay {
-  name: string | null;
-  email: string | null;
-  avatarUrl: string | null;
-  initials: string;
-  isPremium: boolean;
-}
-
-const mockUserDisplay: UserDisplay = {
-  name: 'Usuário Estude+',
-  email: 'usuario@estude.plus',
-  avatarUrl: 'https://placehold.co/100x100.png?text=EP',
-  initials: 'EP',
-  isPremium: true,
-};
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -94,8 +68,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const userDisplay = mockUserDisplay;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,11 +95,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const closeSidebar = () => setIsSidebarOpen(false);
 
-  const handleLogout = () => {
-    closeSidebar();
-    router.push('/');
-  };
-
   const sidebarContent = (
     <div className="flex h-full flex-col bg-card text-card-foreground">
       <div className="flex items-center justify-between border-b p-4 h-20">
@@ -147,8 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {bottomNavItems.map((item) => (
           <NavItem key={item.href} {...item} isActive={pathname === item.href} onClick={closeSidebar} />
         ))}
-        <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={handleLogout}>
-          <LogOut className="mr-3 h-5 w-5" />
+         <Button variant="ghost" className="w-full justify-start text-base py-3" onClick={() => router.push('/')}>
           Sair
         </Button>
       </div>
@@ -204,43 +170,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   ) : (
                     <Moon className="h-5 w-5" />
                   ))}
-                  {!mounted && <Moon className="h-5 w-5" /> /* Or a neutral icon or nothing */}
+                  {!mounted && <Moon className="h-5 w-5" /> }
                 </Button>
-              {userDisplay && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={userDisplay.avatarUrl || undefined} alt={userDisplay.name || 'User'} data-ai-hint="user avatar"/>
-                        <AvatarFallback>{userDisplay.initials || 'U'}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{userDisplay.name || 'Usuário'}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {userDisplay.email || 'Não disponível'}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">Meu Perfil</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings">Configurações</Link>
-                    </DropdownMenuItem>
-                    {userDisplay.isPremium && <DropdownMenuItem>Gerenciar Assinatura (simulado)</DropdownMenuItem>}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sair
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
             </div>
           </header>
           <main className="flex-1 overflow-auto bg-muted/40 p-4 md:p-6 lg:p-8">
