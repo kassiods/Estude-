@@ -1,23 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      // You can add other image provider hostnames here if needed
-    ],
-  },
-  // Add other Next.js configurations here if required
-  // For example:
-  // experimental: {
-  //   typedRoutes: true,
-  // },
+  // The 'swcMinify' option was removed as it's not recognized
+  // by Next.js 15.0.0-rc.0 and was causing startup errors.
+  // SWC is generally the default in newer Next.js versions.
 };
 
 export default nextConfig;
